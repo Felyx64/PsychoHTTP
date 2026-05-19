@@ -1,0 +1,6 @@
+test
+refs
+build/__pycache__
+build/log.txt
+build/obj
+out/*
