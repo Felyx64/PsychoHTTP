@@ -6,14 +6,15 @@
   # PARAMETER: ECX [CHAR*] (THE STRING ITSELF BEING PRINTEND OUT)
   # OVERWRITES: EBX, EAX, EDX, ESI
   standard_console_write:
-    movl $0, %esi                         # Move $0 into %ESI as %ESI may be corrupt which would be bad as %ESI is used to get str leng of what is being printed out.
+    movl $0, %ebx                         # Move $0 into %ESI as %ESI may be corrupt which would be bad as %ESI is used to get str leng of what is being printed out.
   _standard_print___str_leng_loop:        # starts get the str leng loop here
-    cmpl $0, (%ecx, %esi)                 # check if we have hit a null-terminator (\0) in the char of string im reading
+    movb (%ecx, %ebx), %al                # Move currently reading byte to %AL
+    test %al, %al                         # check if we have hit a null-terminator (\0) in the char of string im reading
     je _standard_print___loop_end         # jump out of the loop if get str leng is done
-    inc %esi                              # increment %ESI aka string length if we did not get a \0
+    inc %ebx                              # increment %ESI aka string length if we did not get a \0
     jmp _standard_print___str_leng_loop   # jump back to the beginning of the loop
   _standard_print___loop_end:             # this marks the end of the get string length loop
-    movl %esi, %edx                       # move the string length result of %ESI into %EDX which is the (write) syscall str leng paramater
+    movl %ebx, %edx                       # move the string length result of %ESI into %EDX which is the (write) syscall str leng paramater
     call systemcall_console_write         # goto standard console write syscall function to write out the text
     ret
 

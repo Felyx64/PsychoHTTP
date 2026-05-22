@@ -66,7 +66,7 @@ def copy_js_code():
 def compile_asm_files():
   # org ./../src/*.s ./../src/server/*.s ./../src/lib/*.s
   compile_cmd = subprocess.run([
-    "gcc -nostdlib -m32 ./../src/home.s"
+    "gcc -nostdlib -m32 ./../src/home.s -o ./../out/server.out"
   ], capture_output=True, text=True, shell=True)
 
   if compile_cmd.returncode != 0:

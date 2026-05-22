@@ -8,7 +8,7 @@
     movl $0, %ebx     # 0 moved into $EBX to set a return code
     int $0x80         # call the exit syscall. Program will exit here after
 
-  # PROGRAM_EXIT_SOCKERR: EXITS THE PROGRAM WITH ERROR EXIT CODE OF 2 WHICH MEANS SOCKET CREATION ERROR
+  # PROGRAM_EXIT_SOCKET: EXITS THE PROGRAM WITH ERROR EXIT CODE OF 2 WHICH MEANS SOCKET CREATION ERROR
   # OVERWRITES: EBX, EAX
   program_exit_socket:
     movl $1, %eax     # move 1 into %EBX so syscall (exit) can be called
@@ -33,4 +33,14 @@
   program_exit_initerr:
     movl $1, %eax     # move 1 into %EBX so syscall (exit) can be called
     movl $6, %ebx     # 6 moved into $EBX to set a return code
+    int $0x80         # call the exit syscall. Program will exit here after
+
+  bailout_handler:
+    movl $1, %eax     # move 1 into %EBX so syscall (exit) can be called
+    movl $1, %ebx     # 1 moved into $EBX to set a return code
+    int $0x80         # call the exit syscall. Program will exit here after
+
+  dev_exit_handler:
+    movl $1, %eax     # move 1 into %EBX so syscall (exit) can be called
+    movl $7, %ebx     # 7 moved into $EBX to set a return code
     int $0x80         # call the exit syscall. Program will exit here after
