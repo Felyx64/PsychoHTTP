@@ -27,10 +27,21 @@
 
 .section .text
   _start:
-    # replace with sigemptyset, sigaction later
+    # create the SA_RESTART handler struct required for the coming syscall. struct is C struct "struct sigaction"
+    # coming syscall will make it that the listiners for new requests will not auto-fail once we start the listening
+    pushl $0                                  # set sa_restorer struct member to NULL
+    pushl $0x10000000                         # set sa_flags struct member to SA_RESTART aka 0x1000000
+    pushl $0                                  # set sa_mask struct member to 0. this basically acts as sigemptyset on the member
+    pushl $1                                  # set sa_handler struct member to 1 aka SIG_IGN
 
-    # setup the handler for the SA_RESTART
+    # trigger syscall (sigaction)
+    movl $67, %eax                            # move the syscall code into the %eax register
+    movl $28, %ebx                            # move $28 aka SIGWINCH into %ebx register
+    movl %esp, %ecx                           # move the struct to the ecx register
+    movl $0, %edx                             # move NULL into the last parameter
+    int $0x80                                 # trigger syscall
 
+    addl $16, %esp                            # clear up the struct from the stack so the program can continue
 
     # setup bailout handler so abnormal terminations are handled
     # SIGSEGV - segmentation fault
@@ -117,12 +128,15 @@
     # http server handling done here
 
     .server_loop:                             # start the loop where we check for requests to the server
-    cmpl $1, (%esp)                           # check the shutdown signal
+    cmpl $1, %esp                             # check the shutdown signal
     je .start_shutdown_process                # jump to the shutdown server if we did get a signal
 
     movl 20(%esp), %eax                       # get server fd from stack as 1st param for the request
-    movl 4(%esp), %ebx                        # get the server config from the stack as second paramater
+    leal 4(%esp), %ebx                        # get the server config from the stack as second paramater
     call Handle_Request
+
+    #? DEV
+    call dev_exit_handler
 
     call Handle_Response
 
@@ -130,9 +144,6 @@
     .start_shutdown_process:                  # label we need to jump to if we need to shutdown the server
 
     call program_exit
-
-    #? DEV
-    call dev_exit_handler
 
 # handler imported here
 .include "/home/f65/Documents/proj/PsychoHTTP/src/server/request.s"
