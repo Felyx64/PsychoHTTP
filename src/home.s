@@ -67,8 +67,8 @@
     je program_exit_initerr                   # if they didn't shut down the server pramuterly
 
     # show initilization message
-    movl $Init_Message, %ecx                  # Move The initialization Message into %ECX
-    call standard_console_write               # Engage the write to console from the lib/iostream file
+    movl $Init_Message, %eax                  # Move The initialization Message into %ECX
+    call nstandard_console_write              # Engage the write to console from the lib/iostream file
 
     # start the server itself
     call create_uninitialized_server          # Call function that registers the server in the OS via syscall (socket)
@@ -78,8 +78,8 @@
     pushl %eax                                # Push %eax to stack so we dont need to deal with it in RAM
 
     # show socket creation message
-    movl $Server_Creation_Message, %ecx       # Move The Server socket creation Message into %ECX
-    call standard_console_write               # Engage the write to console from the lib/iostream file
+    movl $Server_Creation_Message, %eax       # Move The Server socket creation Message into %ECX
+    call nstandard_console_write              # Engage the write to console from the lib/iostream file
 
     movl (%esp), %ebx                         # move server fd into %ebx as needed for the setsockopt syscall
 
@@ -91,8 +91,8 @@
     #? ADD EXTRA CONFIGS LIKE (SO_REUSEPORT)
 
     # show socket configuration message
-    movl $Server_Configuration_Message, %ecx  # Move The Server socket configuration Message into %ECX
-    call standard_console_write               # Engage the write to console from the lib/iostream file
+    movl $Server_Configuration_Message, %eax  # Move The Server socket configuration Message into %ECX
+    call nstandard_console_write              # Engage the write to console from the lib/iostream file
 
     # initialize server config struct here
     subl  $16, %esp                           # Creates a stack allocation of 16 needed for this struct
@@ -109,8 +109,8 @@
     je program_exit_binderr                   # Jump to program exit if the function returned an error
 
     # show socket initialization message
-    movl $Server_Initialization_Message, %ecx # Move The Server socket configuration Message into %ECX
-    call standard_console_write               # Engage the write to console from the lib/iostream file
+    movl $Server_Initialization_Message, %eax # Move The Server socket configuration Message into %ECX
+    call nstandard_console_write              # Engage the write to console from the lib/iostream file
 
     # tell the server to start listening on port 7870
     movl 16(%esp), %eax                       # get server fd from stack as 1st param for server
@@ -121,8 +121,8 @@
     movl $0, %ecx                             # mov 0 into the %R8D register which acts as a shutdown signal
     pushl %ecx                                # pushes the checker if loop is done to stack. Ignore the error
 
-    movl $Server_Listen_Message, %ecx         # Move the Error to print into the %ECX parameter
-    call standard_console_write               # call the console write procedure
+    movl $Server_Listen_Message, %eax         # Move the Error to print into the %ECX parameter
+    call nstandard_console_write              # call the console write procedure
 
 
     # http server handling done here
@@ -144,7 +144,7 @@
 
 # handlers imported here
 .include "/home/f65/Documents/proj/PsychoHTTP/src/middleware/middleware.s"
-.include "/home/f65/Documents/proj/PsychoHTTP/src/parse/analyzer.s"
+.include "/home/f65/Documents/proj/PsychoHTTP/src/parse/request.s"
 
 # server imported here
 .include "/home/f65/Documents/proj/PsychoHTTP/src/server/request.s"

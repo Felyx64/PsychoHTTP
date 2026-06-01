@@ -34,8 +34,8 @@
     cmpl $97, %eax                   # check for error: EAFNOSUPPORT
     jne .not_eafnosupport_error      # jump if not error "EAFNOSUPPORT"
 
-    movl $EafNoSupport_Err_Msg, %ecx # Move the Error to print into the %ECX parameter
-    call standard_console_write      # call the console write procedure
+    movl $EafNoSupport_Err_Msg, %eax # Move the Error to print into the %ECX parameter
+    call nstandard_console_write     # call the console write procedure
     movl $-1, %eax                   # move -1 into %EAX signaling an error
     jmp .server_creation_done        # jump to the end of the function
 
@@ -43,8 +43,8 @@
     cmpl $24, %eax                   # check for error: EMFILE
     jne .not_emfile_error            # jump if not error "EMFILE"
 
-    movl $EMFile_Err_Msg, %ecx       # Move the Error to print into the %ECX parameter
-    call standard_console_write      # call the console write procedure
+    movl $EMFile_Err_Msg, %eax       # Move the Error to print into the %ECX parameter
+    call nstandard_console_write     # call the console write procedure
     movl $-1, %eax                   # move -1 into %EAX signaling an error
     jmp .server_creation_done        # jump to the end of the function
 
@@ -52,14 +52,14 @@
     cmpl $13, %eax                   # check for error: EACCES
     jne .unkown_error                # jump if not error "EACCES"
 
-    movl $EAcess_Err_Msg, %ecx       # Move the Error to print into the %ECX parameter
-    call standard_console_write      # call the console write procedure
+    movl $EAcess_Err_Msg, %eax       # Move the Error to print into the %ECX parameter
+    call nstandard_console_write     # call the console write procedure
     movl $-1, %eax                   # move -1 into %EAX signaling an error
     jmp .server_creation_done        # jump to the end of the function
 
     .unkown_error:
-    movl $Unkown_Err_Msg, %ecx       # check for error: UNKNOWN
-    call standard_console_write      # call the console write procedure
+    movl $Unkown_Err_Msg, %eax       # check for error: UNKNOWN
+    call nstandard_console_write     # call the console write procedure
     movl $-1, %eax                   # move -1 into %EAX signaling an error
 
     # stops here if server creation is done

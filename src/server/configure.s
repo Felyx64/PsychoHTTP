@@ -58,8 +58,8 @@ configure_server:
     cmpl $33, %eax                          # check for error: EDOM
     jne .not_edom_error                     # jump if not error "EDOM"
 
-    movl $Edom_Err_Msg, %ecx                # Move the Error to print into the %ECX parameter
-    call standard_console_write             # call the console write procedure
+    movl $Edom_Err_Msg, %eax                # Move the Error to print into the %ECX parameter
+    call nstandard_console_write            # call the console write procedure
     movl $-1, %eax                          # move -1 into %EAX signaling an error
     jmp .configuration_succesfull           # jump to the end of the function
 
@@ -67,8 +67,8 @@ configure_server:
     cmpl $22, %eax                          # check for error: EINVAL
     jne .not_einval_error                   # jump if not error "EINVAL"
 
-    movl $Einval_Err_Msg, %ecx              # Move the Error to print into the %ECX parameter
-    call standard_console_write             # call the console write procedure
+    movl $Einval_Err_Msg, %eax              # Move the Error to print into the %ECX parameter
+    call nstandard_console_write            # call the console write procedure
     movl $-1, %eax                          # move -1 into %EAX signaling an error
     jmp .configuration_succesfull           # jump to the end of the function
 
@@ -76,8 +76,8 @@ configure_server:
     cmpl $106, %eax                         # check for error: EISCONN
     jne .not_eisconn_error                  # jump if not error "EISCONN"
 
-    movl $Eisconn_Err_Msg, %ecx             # Move the Error to print into the %ECX parameter
-    call standard_console_write             # call the console write procedure
+    movl $Eisconn_Err_Msg, %eax             # Move the Error to print into the %ECX parameter
+    call nstandard_console_write            # call the console write procedure
     movl $-1, %eax                          # move -1 into %EAX signaling an error
     jmp .configuration_succesfull           # jump to the end of the function
 
@@ -85,8 +85,8 @@ configure_server:
     cmpl $92, %eax                          # check for error: ENOPROTOOPT
     jne .not_enoprotoopt_error              # jump if not error "ENOPROTOOPT"
 
-    movl $Enoprotoopt_Err_Msg, %ecx             # Move the Error to print into the %ECX parameter
-    call standard_console_write             # call the console write procedure
+    movl $Enoprotoopt_Err_Msg, %eax         # Move the Error to print into the %ECX parameter
+    call nstandard_console_write            # call the console write procedure
     movl $-1, %eax                          # move -1 into %EAX signaling an error
     jmp .configuration_succesfull           # jump to the end of the function
 
@@ -94,8 +94,8 @@ configure_server:
     cmpl $88, %eax                          # check for error: ENOTSOCK
     jne .not_enotsock_error                 # jump if not error "ENOTSOCK"
 
-    movl $Enotsock_Err_Msg, %ecx            # Move the Error to print into the %ECX parameter
-    call standard_console_write             # call the console write procedure
+    movl $Enotsock_Err_Msg, %eax            # Move the Error to print into the %ECX parameter
+    call nstandard_console_write            # call the console write procedure
     movl $-1, %eax                          # move -1 into %EAX signaling an error
     jmp .configuration_succesfull           # jump to the end of the function
 
@@ -103,8 +103,8 @@ configure_server:
     cmpl $12, %eax                          # check for error: ENOMEM
     jne .not_enomem_error                   # jump if not error "ENOMEM"
 
-    movl $Enomen_Err_Msg, %ecx              # Move the Error to print into the %ECX parameter
-    call standard_console_write             # call the console write procedure
+    movl $Enomen_Err_Msg, %eax              # Move the Error to print into the %ECX parameter
+    call nstandard_console_write            # call the console write procedure
     movl $-1, %eax                          # move -1 into %EAX signaling an error
     jmp .configuration_succesfull           # jump to the end of the function
 
@@ -112,8 +112,8 @@ configure_server:
     cmpl $105, %eax                         # check for error: ENOBUFS
     jne .not_enobufs_error                  # jump if not error "ENOBUFS"
 
-    movl $EnoBufs_Err_Msg, %ecx             # Move the Error to print into the %ECX parameter
-    call standard_console_write             # call the console write procedure
+    movl $EnoBufs_Err_Msg, %eax             # Move the Error to print into the %ECX parameter
+    call nstandard_console_write            # call the console write procedure
     movl $-1, %eax                          # move -1 into %EAX signaling an error
     jmp .configuration_succesfull           # jump to the end of the function
 
@@ -121,15 +121,15 @@ configure_server:
     cmpl $14, %eax                         # check for error: EFAULT
     jne .not_efault_error                  # jump if not error "EFAULT"
 
-    movl $Efault_Err_Msg, %ecx              # Move the Error to print into the %ECX parameter
-    call standard_console_write             # call the console write procedure
+    movl $Efault_Err_Msg, %eax              # Move the Error to print into the %ECX parameter
+    call nstandard_console_write            # call the console write procedure
     movl $-1, %eax                          # move -1 into %EAX signaling an error
     jmp .configuration_succesfull           # jump to the end of the function
 
     .not_efault_error:
 
-    movl $Unkown_Config_Err_Msg, %ecx       # Move the Error to print into the %ECX parameter
-    call standard_console_write             # call the console write procedure
+    movl $Unkown_Config_Err_Msg, %eax       # Move the Error to print into the %ECX parameter
+    call nstandard_console_write            # call the console write procedure
     movl $-1, %eax                          # move -1 into %EAX signaling an error
     jmp .configuration_succesfull           # jump to the end of the function
 

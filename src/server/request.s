@@ -48,11 +48,12 @@
     .no_recv_error_found:                   # label to jump to if there was no error
 
     movl %ecx, %eax                         # temp move %ecx server config to %eax
-    movl %esp, %ecx                         # move the buffer to the $ecx register
+    movl %esp, %ecx                         # temp move the buffer to the $ecx register as %eax is not available yet
     pushl %ebx                              # push server fd to the stack as we have no registers to keep this inside
     pushl %eax                              # push server config to the stack as we have no registers to fit it in
+    movl %ecx, %eax                         # now move buffer into %eax is its now available
 
-    call standard_console_write             # printout the buffer
+    call nstandard_console_write            # printout the buffer
 
     popl %eax                               # move server config back into %edi as we need to for the next syscall
     popl %ebx                               # move server fd back into the %ebx register from the stack
