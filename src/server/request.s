@@ -63,7 +63,7 @@
     movl $369, %eax                         # move syscall code (sendto) into %eax
     movl $16, %ebp                          # move the server config into last param
     movl $TempResponseObj, %ecx             # move response message to %ecx
-    movl $TempResponseObjLen, %edx           # move the response length into %edx
+    movl $TempResponseObjLen, %edx          # move the response length into %edx
     int $0x80                               # call syscall 369 (sendto)
 
     cmpl $0, %eax                           # check if sendmsg had an error

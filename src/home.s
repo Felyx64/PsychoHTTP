@@ -135,9 +135,6 @@
     leal 4(%esp), %ebx                        # get the server config from the stack as second paramater
     call Handle_Request
 
-    #? DEV
-    call dev_exit_handler
-
     call Handle_Response
 
     jmp .server_loop                          # jump back the the start of the loop if there we have not gotten a signal yet
@@ -145,7 +142,11 @@
 
     call program_exit
 
-# handler imported here
+# handlers imported here
+.include "/home/f65/Documents/proj/PsychoHTTP/src/middleware/middleware.s"
+.include "/home/f65/Documents/proj/PsychoHTTP/src/parse/analyzer.s"
+
+# server imported here
 .include "/home/f65/Documents/proj/PsychoHTTP/src/server/request.s"
 .include "/home/f65/Documents/proj/PsychoHTTP/src/server/response.s"
 .include "/home/f65/Documents/proj/PsychoHTTP/src/server/create.s"
