@@ -1,10 +1,5 @@
 .global Handle_Request
 
-.section .data
-  TempResponseObj:
-    .asciz "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n<h1>Hello World!</h1>"
-  TempResponseObjLen = . - TempResponseObj - 1
-
 .section .text
   Handle_Request:
     movl %ebx, %ecx                         # move server config pointer to correctly allign function params
@@ -47,40 +42,14 @@
     jmp .end_of_request_handler             # jump to end of request handler if error happened
     .no_recv_error_found:                   # label to jump to if there was no error
 
-    movl %ecx, %eax                         # temp move %ecx server config to %eax
-    movl %esp, %ecx                         # temp move the buffer to the $ecx register as %eax is not available yet
-    pushl %ebx                              # push server fd to the stack as we have no registers to keep this inside
-    pushl %eax                              # push server config to the stack as we have no registers to fit it in
-    movl %ecx, %eax                         # now move buffer into %eax is its now available
-
-    call nstandard_console_write            # printout the buffer
-
-    # move string into scom memory
-
     movl %esp, %eax                         # move the stack pointer to the 1st param of strcpy
+    pushl %ebx                              # push connection fd to the stack as we have no registers to keep this inside
     leal SCOM_User_Server_Request, %ebx     # move the scom temp data memory block into %ebx
     call String_Copy                        # copy stack data into SCOM memory
 
-    popl %eax                               # move server config back into %edi as we need to for the next syscall
-    popl %ebx                               # move server fd back into the %ebx register from the stack
+    popl %eax                               # move the connection fd back into the %eax return accumulator register
 
     addl $1024, %esp                        # clear up the request from the stack
-
-    movl %eax, %edi
-    movl $369, %eax                         # move syscall code (sendto) into %eax
-    movl $16, %ebp                          # move the server config into last param
-    movl $TempResponseObj, %ecx             # move response message to %ecx
-    movl $TempResponseObjLen, %edx          # move the response length into %edx
-    int $0x80                               # call syscall 369 (sendto)
-
-    cmpl $0, %eax                           # check if sendmsg had an error
-    jnl .no_sendmsg_error_found             # jump over error handling if not
-
-    .no_sendmsg_error_found:                # jump here if no error
-
-    movl $6, %eax                           # move syscall code (6) close to %eax
-    # %ebx already set to correct param
-    int $0x80                               # call syscall (close)
 
     .end_of_request_handler:                # request handler stops here
 

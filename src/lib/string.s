@@ -1,5 +1,4 @@
 .section .text
-  #? UNTESTED
   # copies string from dest-1 to dest-2
   # Param: EAX, dest-1
   # Param: EBX, dest-2
@@ -69,6 +68,16 @@
     .not_equal_string:            # jump to this label if both strings are not equal
     movl $1, %ecx                 # move the error code into %ecx if we did get an error
     .end_of_compare_loop:         # jump here if we did not get an error at the end of the loop
+    ret
+
+  #? UNTESTED
+  # gets a line of a large string
+  String_GetLine:
+    ret
+
+  #? UNTESTED
+  # Search for first word in string line beginning
+  String_Search_Line_Begin:
     ret
 
   # search for certain word

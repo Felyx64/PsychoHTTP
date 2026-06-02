@@ -17,6 +17,11 @@
     .asciz "Server Socket now listening onto port 7870 \n"
 
 .section .data
+  TempResponseObj:
+    .asciz "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n<h1>Hello World!</h1>"
+  TempResponseObjLen = . - TempResponseObj - 1
+
+.section .data
   .global bailout_handler
   .type exit_handler, @function
 
@@ -135,6 +140,30 @@
     leal 4(%esp), %ebx                        # get the server config from the stack as second paramater
     call Handle_Request
 
+    # push back from here until no longer needed
+
+    pushl %eax
+
+    call Analyze_Request
+
+    popl %ebx                               # move connection fd into the %ebx second param
+    leal 4(%esp), %edi                      # move server config into edi param
+    movl $369, %eax                         # move syscall code (sendto) into %eax
+    movl $16, %ebp                          # move the server config into last param
+    movl $TempResponseObj, %ecx             # move response message to %ecx
+    movl $TempResponseObjLen, %edx          # move the response length into %edx
+    int $0x80                               # call syscall 369 (sendto)
+
+    cmpl $0, %eax                           # check if sendmsg had an error
+    jnl .no_sendmsg_error_found             # jump over error handling if not
+
+    .no_sendmsg_error_found:                # jump here if no error
+
+    movl $6, %eax                           # move syscall code (6) close to %eax
+    # %ebx already set to correct param
+    int $0x80                               # call syscall (close)
+
+    call Handle_Middleware
     call Handle_Response
 
     jmp .server_loop                          # jump back the the start of the loop if there we have not gotten a signal yet
