@@ -55,6 +55,12 @@
 
     call nstandard_console_write            # printout the buffer
 
+    # move string into scom memory
+
+    movl %esp, %eax                         # move the stack pointer to the 1st param of strcpy
+    leal SCOM_User_Server_Request, %ebx     # move the scom temp data memory block into %ebx
+    call String_Copy                        # copy stack data into SCOM memory
+
     popl %eax                               # move server config back into %edi as we need to for the next syscall
     popl %ebx                               # move server fd back into the %ebx register from the stack
 

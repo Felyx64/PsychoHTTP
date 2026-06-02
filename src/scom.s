@@ -3,5 +3,5 @@
 # Without having to deal with the heap.
 
 .section .bss
-  User_Server_Request:
+  SCOM_User_Server_Request:
     .space 1024

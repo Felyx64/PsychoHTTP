@@ -4,7 +4,6 @@
   # Param: EAX, dest-1
   # Param: EBX, dest-2
   # Overwrites: ECX, EDX
-  # Returns EBX, aka dest-2
   String_Copy:
     movl $0, %ecx                 # index of both strings we are copying
     .str_copy_loop:               # start of loop
@@ -30,7 +29,7 @@
     cmpb $0, (%ebx, %ecx)         # check if we hit end of dest-2
     je .done_getting_start        # jump to end of loop if we hit end of dest-2
     inc %ecx                      # increment index of dest-2 if we did not hit end of dest-2
-    jmp .get_start_first_param    # jump to begin of loop to continue loop
+    jmp .get_start_second_param   # jump to begin of loop to continue loop
     .done_getting_start:          # label for end of get end of dest-2 loop here
 
     movl $0, %edx                 # initiate %edx which is index of dest-1
