@@ -153,6 +153,9 @@
 .include "/home/f65/Documents/proj/PsychoHTTP/src/server/configure.s"
 .include "/home/f65/Documents/proj/PsychoHTTP/src/server/listen.s"
 
-# lib goes in bottom
+# lib goes in near bottom
 .include "/home/f65/Documents/proj/PsychoHTTP/src/lib/iostream.s"
 .include "/home/f65/Documents/proj/PsychoHTTP/src/lib/logic.s"
+
+# scom goes in bottom as its globally accessed
+.include "/home/f65/Documents/proj/PsychoHTTP/src/scom.s"
