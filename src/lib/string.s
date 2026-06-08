@@ -71,14 +71,58 @@
     ret
 
   #? UNTESTED
-  # gets a line of a large string
-  String_GetLine:
-    ret
-
-  #? UNTESTED
   # Search for first word in string line beginning
+  # EAX, string we are searching the line from
+  # EBX, buffer which will hold the line we are getting, 1 if we got nothing in the search
+  # ECX, line start string we are searching for
+  # Overwrites: EDX, ESI
   String_Search_Line_Begin:
-    ret
+    movl $0, %esi                 # start array get index at 0
+    movl $0, %edi                 # start array set index at 0
+    .string_search_loop:          # start a loop to search for the text we are searching for
+    cmpb $0, (%ecx, %edi)         # check if we got the string we are searching for
+    je .back_to_line_begin_loop   # jump to the done searching if we are done searching for the string
+    movb (%eax, %esi), %dl        # get the char from %eax
+    cmpb $0, %dl                  # check if we are at end of file
+    je .line_not_found            # jump out of loop if we are
+    cmpb %dl, (%ecx, %edi)        # check if the char and the search char are the same
+    inc %edi                      # increment index of array set
+    inc %esi                      # increment index of array get
+    je .string_search_loop        # jump to begin begin of loop if they are the same
+    movl $0, %edi                 # reset the array set index if it is not
+    .fast_foward_next_line:       # start loop to go to next line
+    cmpb $10, (%eax, %esi)        # check if we hit next line
+    inc %esi                      # increment %esi here so we dont hit \n next time we start scanning again
+    je .string_search_loop        # jump back to line search if we hit new line
+    jmp .fast_foward_next_line    # back to the loop start if we did not hit next line
+
+    .back_to_line_begin_loop:     # this loop takes us back to the beginning of the line so the line can be extracted
+    cmpb $10, (%eax, %esi)        # check if we hit \n
+    je .got_line_begin            # if we did then we go the the get line loop
+    dec %esi                      # if not decrement the index till we do
+    jmp .back_to_line_begin_loop  # back to loop start if we have not hit \n
+
+    .got_line_begin:              # from here setup the params for the line extract
+    inc %esi                      # increment %esi so we are no longer on the \n
+    movl $0, %edi                 # set the %edi index back to 0 because we no longer need to scan %ecx not now %ebx
+    .getline_loop_start:          # start line setter loop
+    movb (%eax, %esi), %dl        # extract char from %eax
+    cmpb $10, %dl                 # compare if we are at the end of line
+    je .hit_eol                   # go to the hit end of line if we did
+    cmpb $0, %dl                  # check if we are at end of file
+    je .hit_eol                   # same end of line procecure happens here
+    movb %dl, (%ebx, %edi)        # move the eax char into the dest %ebx
+    inc %edi                      # increment the setter index
+    inc %esi                      # increment the getter index
+    jmp .getline_loop_start       # jump back to begin of loop to redo the incructions
+    .hit_eol:                     # return if we hit the end of line
+    movb $0, (%ebx, %edi)         # end off %ebx with \0 so its a all out full line
+    ret                           # return
+    .line_not_found:              # if we encountered an error
+    movl $0, %ebx                 # return an error inside %ebx
+    ret                           # return
+
+  # sear
 
   # search for certain word
   String_Search:

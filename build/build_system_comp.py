@@ -28,10 +28,7 @@ def create_new_out_dirs():
   sucess_codes = [
     subprocess.run(["mkdir", "./../out"], capture_output=True),
     subprocess.run(["mkdir", "./../out/obj"], capture_output=True),
-    subprocess.run(["mkdir", "./../out/content"], capture_output=True),
-    subprocess.run(["mkdir", "./../out/content/html"], capture_output=True),
-    subprocess.run(["mkdir", "./../out/content/css"], capture_output=True),
-    subprocess.run(["mkdir", "./../out/content/js"], capture_output=True)
+    subprocess.run(["mkdir", "./../out/content"], capture_output=True)
   ]
 
   if all(sc.returncode != 0 for sc in sucess_codes):
@@ -40,7 +37,7 @@ def create_new_out_dirs():
   return [True]
 
 def copy_html_code():
-  cpy_html_cmd = subprocess.run(["cp", "-a", "./../src/frontend/html/", "./../out/content/html"], capture_output=True)
+  cpy_html_cmd = subprocess.run(["cp", "-a", "./../src/frontend/home.html", "./../out/content/home.html"], capture_output=True)
 
   if cpy_html_cmd.returncode != 0:
     return [False]
@@ -48,7 +45,7 @@ def copy_html_code():
   return [True]
 
 def copy_css_code():
-  cpy_css_cmd = subprocess.run(["cp", "-a", "./../src/frontend/css/", "./../out/content/css"], capture_output=True)
+  cpy_css_cmd = subprocess.run(["cp", "-a", "./../src/frontend/style.css", "./../out/content/style.css"], capture_output=True)
 
   if cpy_css_cmd.returncode != 0:
     return [False]
@@ -56,7 +53,7 @@ def copy_css_code():
   return [True]
 
 def copy_js_code():
-  cpy_js_cmd = subprocess.run(["cp", "-a", "./../src/frontend/js/", "./../out/content/js"], capture_output=True)
+  cpy_js_cmd = subprocess.run(["cp", "-a", "./../src/frontend/clientscript.js", "./../out/content/clientscript.js"], capture_output=True)
 
   if cpy_js_cmd.returncode != 0:
     return [False]
