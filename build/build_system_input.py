@@ -34,13 +34,6 @@ def handle_Css_copyproc_input(input_handler_info):
   else:
     return input_handler_info[1]
 
-def handle_Js_copyproc_input(input_handler_info):
-  if input_handler_info[2]:
-    input_handler_info[1] += 1
-    return input_handler_info[1]
-  else:
-    return input_handler_info[1]
-
 def handle_assemble_input(input_handler_info):
   if input_handler_info[2]:
     input_handler_info[1] += 1
@@ -55,6 +48,5 @@ def get_input_handler(scene, input_handler_info):
     handle_out_creation_input,
     handle_Html_copyproc_input,
     handle_Css_copyproc_input,
-    handle_Js_copyproc_input,
     handle_assemble_input
   ][scene](input_handler_info)

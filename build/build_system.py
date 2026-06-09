@@ -20,7 +20,7 @@ while tui_loop:
   user_input = compiler_tui.wait_for_input()
   render_scene = get_input_handler(render_scene, [user_input, render_scene, scene_info[0]])
 
-  if render_scene == 7 or user_input == 27:
+  if render_scene == 6 or user_input == 27:
     tui_loop = False
 
   if last_scene != render_scene:

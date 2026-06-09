@@ -15,6 +15,7 @@
     inc %ecx                             # increment ecx so we can keep checking
     jmp .find_path_loop_start            # go back to start of loop to keep looking for start of path
     .found_a_path:                       # we start scanning the path here
+    inc %ecx                             # increment %ecx so we are no longer looking at the root of the path
     ret
 
   Analyze_Request:
@@ -25,19 +26,27 @@
     cmpb $0x50, %dl                      # if char 'P' analyze as POST request
     je .is_post_request                  # move to POST analyzer if we got P
     movl $1, %eax                        # move 1 aka error into eax
-    jmp .bad_request_analysis            # move to error exit once error
+    jmp .request_analysis_done           # move to error exit once error
 
+    .is_get_request:
     # if is GET request
 
     call Search_Path_Start               # search for the start of the request path
-
     movb (%eax, %ecx), %dl               # move into %dl the next character
+    movl $2, %esi                        # temp move 2 into %esi for cmovel
     cmpb $0x20, %dl                      # if nothing its the root path
-    cmovel $2, %ebx                      # move code 2 "root" into the temp return object if root
+    cmovel %esi, %ebx                    # move code 2 "root" into the temp return object if root
+    je .request_analysis_done
+    movl $3, %esi                        # temp move 3 into %esi for cmovel
     cmpb $0x73, %dl                      # check if it is s which means we are asking for the css
-    cmovel $3, %ebx                      # move code 3 "styles" into the temp return object if styles
+    cmovel %esi, %ebx                    # move code 3 "styles" into the temp return object if styles
+    je .request_analysis_done
+    movl $4, %esi                        # temp move 4 into %esi for cmovel
     cmpb $0x70, %dl                      # check if it is p which means we are asking for a post
-    cmovel $4, %ebx                      # move code 4 "posts" into the temp return object if posts
+    cmovel %esi, %ebx                    # move code 4 "posts" into the temp return object if posts
+    je .request_analysis_done
+
+    movl $1, %ebx                   # move error code 1 into eax if the path is not valid
 
     jmp .request_analysis_done           # jump once analysis is done
     .is_post_request:                    # we start analyzing the POST request here
@@ -47,14 +56,13 @@
 
     movb (%eax, %ecx), %dl               # move into %dl the next character
     cmpb $0x75, %dl                      # if nothing its the root path
-    cmovel $5, %ebx                      # move code 5 "upload_post" into the temp return object if upload_post
-    cmovnell $1, %eax                    # move error code 1 into eax if we got an error
-    jne .bad_request_analysis            # jump to the error if bad POST request
+    movl $5, %esi                        # temp move 5 into %esi for cmovel
+    cmovel %esi, %ebx                    # move code 5 "upload_post" into the temp return object if upload_post
+    movl $1, %esi                        # temp move 1 into %esi for cmovnel
+    cmovnel %esi, %ebx                   # move error code 1 into eax if the path is not valid
 
-    .request_analysis_done:
+    .request_analysis_done:              # label insignifies the end of the procedure
     movl %ebx, %eax                      # move the code into the %eax
-
-    .bad_request_analysis:
     ret
 
 # GET /

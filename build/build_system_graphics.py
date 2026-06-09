@@ -171,31 +171,6 @@ class gui_screen:
       self.stdscr.addstr(6, 14, "Err: something wont wrong with the CSS copying process")
       self.stdscr.attroff(curses.color_pair(2))
 
-  def display_js_copy_status(self, scene_info):
-    self.display_html_copy_status([True])
-    self.display_css_copy_status([True])
-
-    self.stdscr.attron(curses.A_BOLD)
-    self.stdscr.addstr(8, 10, "Checking if js copying process was succesfull: ")
-    self.stdscr.attroff(curses.A_BOLD)
-
-    if scene_info[0]:
-      self.stdscr.attron(curses.color_pair(4))
-      self.stdscr.addstr(9, 10, "[V]")
-      self.stdscr.attroff(curses.color_pair(4))
-
-      self.stdscr.attron(curses.color_pair(2))
-      self.stdscr.addstr(9, 14, "JS files where succesfully copied")
-      self.stdscr.attroff(curses.color_pair(2))
-    else:
-      self.stdscr.attron(curses.color_pair(3))
-      self.stdscr.addstr(9, 10, "[X]")
-      self.stdscr.attroff(curses.color_pair(3))
-
-      self.stdscr.attron(curses.color_pair(2))
-      self.stdscr.addstr(9, 14, "Err: something went wrong with the JS copying process")
-      self.stdscr.attroff(curses.color_pair(2))
-
   def display_compile_status(self, scene_info):
     self.stdscr.attron(curses.A_BOLD)
     self.stdscr.addstr(2, 10, "Checking if assemble process was sucessfull: ")
@@ -232,7 +207,6 @@ class gui_screen:
       self.display_new_dir_creation,
       self.display_html_copy_status,
       self.display_css_copy_status,
-      self.display_js_copy_status,
       self.display_compile_status
     ][scene](scene_info)
 

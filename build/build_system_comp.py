@@ -52,14 +52,6 @@ def copy_css_code():
 
   return [True]
 
-def copy_js_code():
-  cpy_js_cmd = subprocess.run(["cp", "-a", "./../src/frontend/clientscript.js", "./../out/content/clientscript.js"], capture_output=True)
-
-  if cpy_js_cmd.returncode != 0:
-    return [False]
-
-  return [True]
-
 def compile_asm_files():
   # org ./../src/*.s ./../src/server/*.s ./../src/lib/*.s
   compile_cmd = subprocess.run([
@@ -100,6 +92,5 @@ def do_scene_action(scene):
     create_new_out_dirs,
     copy_html_code,
     copy_css_code,
-    copy_js_code,
     compile_asm_files
   ][scene]()
