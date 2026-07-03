@@ -85,6 +85,8 @@ class Comp_logic:
       with open("./log.txt", "w") as f:
         f.write(log_file_contents)
 
+      print("Note: An error accured during the assemble process. error logs can be found in log.txt")
+
       self.error_code = 1
 
     self.error_code = 0
