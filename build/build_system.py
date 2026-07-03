@@ -1,30 +1,27 @@
-from build_system_graphics import gui_screen
-from build_system_comp import do_scene_action
-from build_system_input import get_input_handler
+from build_system_comp import Comp_logic
+from build_system_watch import Start_comp_watch
+import sys
 
-# initialize the tui
-compiler_tui = gui_screen()
-# display the startup countdown
-compiler_tui.startup_message()
-
-tui_loop = True
-render_scene = 0
 scene_info = []
+comp_actions = Comp_logic()
 
-while tui_loop:
-  last_scene = render_scene
+dep_res = comp_actions.check_dep_versions()
 
-  compiler_tui.display_standard_screen_graphics()
-  scene_info = do_scene_action(render_scene)
-  compiler_tui.render_variable_graphics(render_scene, scene_info)
-  user_input = compiler_tui.wait_for_input()
-  render_scene = get_input_handler(render_scene, [user_input, render_scene, scene_info[0]])
+if not dep_res[0]:
+  print("error: you are not on the desired version of GCC, version required is 1521. You are on version, " + dep_res[1])
+  exit(1)
 
-  if render_scene == 6 or user_input == 27:
-    tui_loop = False
+def Assemble_Files():
+  comp_actions.do_out_dir_cleanup()
+  comp_actions.create_new_out_dirs()
+  comp_actions.copy_html_code()
+  comp_actions.copy_css_code()
+  comp_actions.compile_asm_files()
 
-  if last_scene != render_scene:
-    scene_info.clear()
+  if comp_actions.error_code == 1:
+    print("error something went wrong while assembling or copying the files")
 
-
-compiler_tui.exit()
+if len(sys.argv) > 1 and sys.argv[1] == "--watch":
+  Start_comp_watch(Assemble_Files)
+else:
+  Assemble_Files()
