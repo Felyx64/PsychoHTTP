@@ -16,6 +16,7 @@ def Assemble_Files():
   comp_actions.create_new_out_dirs()
   comp_actions.copy_html_code()
   comp_actions.copy_css_code()
+  comp_actions.generate_other_files()
   comp_actions.compile_asm_files()
 
   if comp_actions.error_code == 1:

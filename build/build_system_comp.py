@@ -32,7 +32,8 @@ class Comp_logic:
   def create_new_out_dirs(self):
     sucess_codes = [
       subprocess.run(["mkdir", "./../out"], capture_output=True),
-      subprocess.run(["mkdir", "./../out/content"], capture_output=True)
+      subprocess.run(["mkdir", "./../out/content"], capture_output=True),
+      subprocess.run(["mkdir", "./../out/config"], capture_output=True)
     ]
 
     if all(sc.returncode != 0 for sc in sucess_codes):
@@ -50,6 +51,14 @@ class Comp_logic:
 
   def copy_css_code(self):
     cpy_css_cmd = subprocess.run(["cp", "-a", "./../src/frontend/style.css", "./../out/content/style.css"], capture_output=True)
+
+    if cpy_css_cmd.returncode != 0:
+      self.error_code = 1
+
+    self.error_code = 0
+
+  def generate_other_files(self):
+    cpy_css_cmd = subprocess.run(["touch", "./../out/config/filter.txt", "./../out/config/database.txt"], capture_output=True)
 
     if cpy_css_cmd.returncode != 0:
       self.error_code = 1

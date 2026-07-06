@@ -24,11 +24,11 @@
     subl $2, %eax                             # subtract 2 from %eax or else the switch wont work
     jmp *response_table(,%eax,4)              # jump to the adress which this number correlates to on the adress table (this is the switch statement)
 
-  response_table:                             # this is the adress table for the switch statement
-    .long is_get_root                         # if code 2 (root) this adress will be jumped to
-    .long is_get_styles                       # if code 3 (styles) this adress will be jumped to
-    .long is_get_posts                        # if code 4 (post) this adress will be jumped to
-    .long is_posts_uploadpost                 # if code 5 (upload) this adress will be jumped to
+    response_table:                           # this is the adress table for the switch statement
+      .long is_get_root                       # if code 2 (root) this adress will be jumped to
+      .long is_get_styles                     # if code 3 (styles) this adress will be jumped to
+      .long is_get_posts                      # if code 4 (post) this adress will be jumped to
+      .long is_posts_uploadpost               # if code 5 (upload) this adress will be jumped to
 
   is_get_root:
     leal 4(%esp), %edi                        # move server config into edi param

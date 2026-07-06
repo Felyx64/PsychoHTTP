@@ -23,10 +23,20 @@
   exit_handler:
     movl $1, %eax                              # move 1 into %EAX to call syscall (exit)
     movl $99, %ebx                             # exit with code 99 (bailout)
-    int $0x80                                 # trigger (exit) syscall itself
+    int $0x80                                  # trigger (exit) syscall itself
 
 .section .text
   _start:
+    movl $0, %eax                             # move code 1 saying we need the filter folder
+    call Read_File_Standard                   # call the read file operation
+
+    leal SCOM_File_Read_Results, %eax         # link scom result to %eax
+    leal GSCOM_Server_Filter, %ebx            # link global filter scom to %ebx
+    call Copy_SCOM                            # copy and paste scom results to the Global filter scom
+
+    leal SCOM_File_Read_Results, %eax         # link the scom results again to %eax
+    call Clear_SCOM                           # clear the scom
+
     # create the SA_RESTART handler struct required for the coming syscall. struct is C struct "struct sigaction"
     # coming syscall will make it that the listiners for new requests will not auto-fail once we start the listening
     pushl $0                                  # set sa_restorer struct member to NULL
@@ -154,6 +164,8 @@
 
     .no_get_routeerr:                         # lebel to jump to if we had no bad request
 
+    #? LEFT OFF HERE
+    # PRINT THE "GSCOM_Server_Filter" HERE FOR DEBUG PURPOSES
     # filter request here
 
     call RouteRequest                         # route the request itself
@@ -190,6 +202,7 @@
 .include "/home/f65/Documents/proj/PsychoHTTP/src/lib/iostream.s"
 .include "/home/f65/Documents/proj/PsychoHTTP/src/lib/logic.s"
 .include "/home/f65/Documents/proj/PsychoHTTP/src/lib/string.s"
+.include "/home/f65/Documents/proj/PsychoHTTP/src/lib/fsio.s"
 
 # scom goes in bottom as its globally accessed
 .include "/home/f65/Documents/proj/PsychoHTTP/src/scom.s"
