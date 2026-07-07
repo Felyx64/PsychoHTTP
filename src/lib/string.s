@@ -44,7 +44,6 @@
     movb $0, (%ebx, %edx)         # add '\0' null terminator to the dest-2
     ret
 
-  #? UNTESTED
   # compare 2 strings
   # compares to strings byte by byte
   # Param: EAX, dest-1
@@ -70,12 +69,14 @@
     .end_of_compare_loop:         # jump here if we did not get an error at the end of the loop
     ret
 
+  #? UNTESTED
   # search for certain word
   # EAX, pointer to firt character of the word we are searching for
   # EBX, pointer to the first character of the string we are searching in
   # ECX, lenght of the word we are searching for
   # Overwrites: EDX, ESI, EDI
   # Returns: (EAX) true of false if the word has been found 1 = true, 0 = false
+  # Returns: (EBX) Poiter to the last character of the string we found in EAX in what was originally EAX
   String_Search_Word:
     movl (%eax), %esi             # move first character of the string we are searching for into %esi
     movl $1, %edi                 # move 1 not 0 into %edi so we can see if we reached end of fhe string we are searching
@@ -107,8 +108,10 @@
     movl $1, %edi                 # move 1 back into %edi
     je .string_not_found          # jump to string not found if we are
     .found_str:                   # logic if we found the string
+    movl %eax, %ebx               # move %eax to %ebx as its second return value
     movl $1, %eax                 # move 1 True into %eax
     ret                           # return
     .string_not_found:            # logic if we did not find the string
+    movl %eax, %ebx               # move %eax to %ebx as its second return value
     movl $0, %eax                 # move 0 False into %eax
     ret                           # return

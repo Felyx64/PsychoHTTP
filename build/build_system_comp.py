@@ -42,9 +42,12 @@ class Comp_logic:
     self.error_code = 0
 
   def copy_html_code(self):
-    cpy_html_cmd = subprocess.run(["cp", "-a", "./../src/frontend/home.html", "./../out/content/home.html"], capture_output=True)
+    cpy_html_cmd_codes = [
+      subprocess.run(["cp", "-a", "./../src/frontend/home.html", "./../out/content/home.html"], capture_output=True),
+      subprocess.run(["cp", "-a", "./../src/frontend/403.html", "./../out/content/403.html"], capture_output=True),
+    ]
 
-    if cpy_html_cmd.returncode != 0:
+    if all(sc.returncode != 0 for sc in cpy_html_cmd_codes):
       self.error_code = 1
 
     self.error_code = 0
@@ -58,9 +61,9 @@ class Comp_logic:
     self.error_code = 0
 
   def generate_other_files(self):
-    cpy_css_cmd = subprocess.run(["touch", "./../out/config/filter.txt", "./../out/config/database.txt"], capture_output=True)
+    gen_cmd = subprocess.run(["touch", "./../out/config/filter.txt", "./../out/database.txt", "./../out/server.log"], capture_output=True)
 
-    if cpy_css_cmd.returncode != 0:
+    if gen_cmd.returncode != 0:
       self.error_code = 1
 
     self.error_code = 0

@@ -37,6 +37,8 @@
     leal SCOM_File_Read_Results, %eax         # link the scom results again to %eax
     call Clear_SCOM                           # clear the scom
 
+    call Initialize_Filter_Language           # Initialze the server filter
+
     # create the SA_RESTART handler struct required for the coming syscall. struct is C struct "struct sigaction"
     # coming syscall will make it that the listiners for new requests will not auto-fail once we start the listening
     pushl $0                                  # set sa_restorer struct member to NULL
@@ -162,12 +164,13 @@
     int $0x80                                 # call syscall 369 (sendto)
     jmp .end_sendout_res                      # jump over switch to close the request
 
-    .no_get_routeerr:                         # lebel to jump to if we had no bad request
+    .no_get_routeerr:                         # label to jump to if we had no bad request
 
-    #? LEFT OFF HERE
-    # PRINT THE "GSCOM_Server_Filter" HERE FOR DEBUG PURPOSES
-    # filter request here
-
+    call Filter_Request                       # filter the request to check if its allowed
+    cmpl $0, %eax                             # look what the filter said about the request
+    je .request_allowed                       # jump it request is allowed
+    movl $8, %eax                             # move 8 which will become 6 if request was not allowed
+    .request_allowed:                         # label to jump to if request is allowed
     call RouteRequest                         # route the request itself
 
     cmpl $0, %eax                             # check if sendmsg had an error
@@ -197,6 +200,9 @@
 .include "/home/f65/Documents/proj/PsychoHTTP/src/server/create.s"
 .include "/home/f65/Documents/proj/PsychoHTTP/src/server/configure.s"
 .include "/home/f65/Documents/proj/PsychoHTTP/src/server/listen.s"
+
+# interpreters go here
+.include "/home/f65/Documents/proj/PsychoHTTP/src/interpreter/filter_language.s"
 
 # lib goes in near bottom
 .include "/home/f65/Documents/proj/PsychoHTTP/src/lib/iostream.s"
