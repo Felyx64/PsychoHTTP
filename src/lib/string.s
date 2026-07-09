@@ -69,7 +69,6 @@
     .end_of_compare_loop:         # jump here if we did not get an error at the end of the loop
     ret
 
-  #? UNTESTED
   # search for certain word
   # EAX, pointer to firt character of the word we are searching for
   # EBX, pointer to the first character of the string we are searching in

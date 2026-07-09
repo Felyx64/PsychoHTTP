@@ -22,12 +22,14 @@ class Comp_logic:
 
   def do_out_dir_cleanup(self):
     out_dir_path = Path("./../out")
+    rootcopy = out_dir_path
 
     for root, dirs, files in out_dir_path.walk(top_down=False):
       for fname in files:
         (root / fname).unlink()
         for name in dirs:
-          (root / name).rmdir()
+          if not root == rootcopy:
+            (root / name).rmdir()
 
   def create_new_out_dirs(self):
     sucess_codes = [

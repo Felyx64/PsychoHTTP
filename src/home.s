@@ -37,6 +37,9 @@
     leal SCOM_File_Read_Results, %eax         # link the scom results again to %eax
     call Clear_SCOM                           # clear the scom
 
+    movl $GSCOM_Server_Filter, %eax
+    call nstandard_console_write
+
     call Initialize_Filter_Language           # Initialze the server filter
 
     # create the SA_RESTART handler struct required for the coming syscall. struct is C struct "struct sigaction"
@@ -145,7 +148,7 @@
 
     movl 20(%esp), %eax                       # get server fd from stack as 1st param for the request
     leal 4(%esp), %ebx                        # get the server config from the stack as second paramater
-    call Handle_Request
+    call Handle_Request                       # wait for the request and handle stuff here
 
     # push back from here until no longer needed
     pushl %eax
@@ -167,6 +170,8 @@
     .no_get_routeerr:                         # label to jump to if we had no bad request
 
     call Filter_Request                       # filter the request to check if its allowed
+    #? LABEL FOR GDB
+    .done_filtering:
     cmpl $0, %eax                             # look what the filter said about the request
     je .request_allowed                       # jump it request is allowed
     movl $8, %eax                             # move 8 which will become 6 if request was not allowed

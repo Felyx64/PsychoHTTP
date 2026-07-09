@@ -9,11 +9,12 @@
     .get_item_len_loop:                   # start the get length of item we are searching for loop
     inc %eax                              # increment the pointer to our current item so we look further to the end of word
     inc %ecx                              # increment %ecx i.e the word length that we know of
-    #cmpl $0, %eax                         # check if we found end of file
-    #jne .get_item_len_loop                # if we did not find eof than we go back
-    # DILLEMA WE NEED TO CHECK BOTH
-    cmpl $10, %eax                        # check if we found the \n
-    jne .get_item_len_loop                # go back if its not the \n
+    cmpl $0, (%eax)                       # check if we found end of file
+    je .end_of_length_getter_loop         # if we did not find eof than we go back
+    cmpl $10, (%eax)                      # check if we found the \n
+    je .end_of_length_getter_loop         # go back if its not the \n
+    jmp .get_item_len_loop                # jump back to start if there was no \0 or \n
+    .end_of_length_getter_loop:           # label if we hit end of loop
     dec %ecx                              # decrement the lenght as we overshoot by 1 with this loop
     popl %eax                             # move the original pointer back into %eax from memory
     leal SCOM_User_Server_Request, %ebx   # create pointer to request in %ebx

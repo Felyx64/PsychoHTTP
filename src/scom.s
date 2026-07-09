@@ -14,18 +14,17 @@
     .space 1024
 
 .section .text
-  #? UNTESTED
   # clears an scom if needed
   # Param: (%eax) pointer to scom that has to be cleared
   # OVERWRITES: EBX
   Clear_SCOM:
     movl %eax, %ebx       # copy scom pointer to %ebx
-    addl $1023, %ebx      # add scom's limit to %ebx
+    addl $1024, %ebx      # add scom's limit to %ebx
     .clear_loop:          # start clerance loop
-    movl $0, (%eax)       # move 0 into the scom index
-    inc %eax              # increment %eax
-    cmpl %eax, %ebx       # compare the max and current pointer
-    jne .clear_loop       # jump back to the start of the loop if we're not done clearing
+    movb $0, (%eax)       # move 0 into the scom index
+    incl %eax             # increment %eax
+    cmpl %ebx, %eax       # compare the max and current pointer
+    jne .clear_loop       # jump back to the start of the loop if we're not done clearing'
     ret
 
   # copies and pastes scom from 1 memory location to another
@@ -36,12 +35,12 @@
     movl %eax, %ecx       # move %eax ptr to %ecx
     addl $1023, %ecx      # add 1023 to %ecx so it can act as a limit to where we are writing
     .copy_loop:           # start copying
-    movl (%eax), %edx     # move what's in %eax in the temp %edx
-    movl %edx, (%ebx)     # move temp into %ebx
+    movb (%eax), %dl      # move what's in %eax in the temp %edx
+    movb %dl, (%ebx)      # move temp into %ebx
     cmpl %eax, %ecx       # compare %eax to limiter %ecx
     je .copying_done      # jump to copying done if copying we done
-    inc %eax              # incrememnt %eax if not
-    inc %ebx              # incrememnt %ebx if not
+    incl %eax             # incrememnt %eax if not
+    incl %ebx             # incrememnt %ebx if not
     jmp .copy_loop        # jump back to loop if we are not done looping
     .copying_done:        # label if copying has been done
     ret
