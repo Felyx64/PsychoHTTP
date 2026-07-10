@@ -24,9 +24,12 @@ def assemble_files():
   if comp_actions.error_code == 1:
     print("error something went wrong while assembling or copying the files")
 
-def Compile_With_Debug():
+def compile_with_debug():
   assemble_files()
   move_debug_files()
+
+def watch_complr():
+  Start_comp_watch(assemble_files)
 
 def main():
   arguement_parser = argparse.ArgumentParser()
@@ -37,18 +40,18 @@ def main():
 
   arg_result = arguement_parser.parse_args()
 
-  procedure_to_do = assemble_files()
+  procedure_to_do = assemble_files
 
   if arg_result.debug:
-    procedure_to_do = Compile_With_Debug
+    procedure_to_do = compile_with_debug
 
   if arg_result.only_debug:
     procedure_to_do = move_debug_files
 
   if arg_result.watch:
-    procedure_to_do = Start_comp_watch
-
-  procedure_to_do()
+    Start_comp_watch(procedure_to_do)
+  else:
+    procedure_to_do()
 
 
 if __name__ == "__main__":

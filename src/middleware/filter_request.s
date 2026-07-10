@@ -4,18 +4,17 @@
   Filter_Request:
     .start_filter_loop:                   # starts the filter loop
     call Get_Filtered_String              # get string from the filter file
-    pushl %eax                            # copy the string we got to stack tempoirly
-    movl $1, %ecx                         # move 1 into %ecx as this is the size of the string so far
+    pushl %eax                            # copy the string we got to stack tempoairly
+    movl $0, %ecx                         # move 1 into %ecx as this is the size of the string so far
     .get_item_len_loop:                   # start the get length of item we are searching for loop
+    cmpb $0, (%eax)                       # check if we found end of file
+    je .end_of_length_getter_loop         # if we did not find eof than we go back
+    cmpb $10, (%eax)                      # check if we found the \n
+    je .end_of_length_getter_loop         # go back if its not the \n
     inc %eax                              # increment the pointer to our current item so we look further to the end of word
     inc %ecx                              # increment %ecx i.e the word length that we know of
-    cmpl $0, (%eax)                       # check if we found end of file
-    je .end_of_length_getter_loop         # if we did not find eof than we go back
-    cmpl $10, (%eax)                      # check if we found the \n
-    je .end_of_length_getter_loop         # go back if its not the \n
     jmp .get_item_len_loop                # jump back to start if there was no \0 or \n
     .end_of_length_getter_loop:           # label if we hit end of loop
-    dec %ecx                              # decrement the lenght as we overshoot by 1 with this loop
     popl %eax                             # move the original pointer back into %eax from memory
     leal SCOM_User_Server_Request, %ebx   # create pointer to request in %ebx
     call String_Search_Word               # search if filtered word is in the request

@@ -73,26 +73,27 @@
   # EAX, pointer to firt character of the word we are searching for
   # EBX, pointer to the first character of the string we are searching in
   # ECX, lenght of the word we are searching for
-  # Overwrites: EDX, ESI, EDI
+  # Overwrites: DL, ESI
   # Returns: (EAX) true of false if the word has been found 1 = true, 0 = false
   # Returns: (EBX) Poiter to the last character of the string we found in EAX in what was originally EAX
   String_Search_Word:
-    movl (%eax), %esi             # move first character of the string we are searching for into %esi
+    movl %eax, %esi               # move %eax into temp %esi as we dont have SIL in 32-bit assembly
+    movb (%esi), %al              # move first character of the string we are searching for into %al
     movl $1, %edi                 # move 1 not 0 into %edi so we can see if we reached end of fhe string we are searching
     .string_search_loop:          # start of the finding of the first character of the string
-    movl (%ebx), %edx             # move the char inside text are are analyzing into %edx
-    cmpl %edx, %esi               # compare the 2 chars in %edx, %esi
+    movb (%ebx), %dl              # move the char inside text are are analyzing into %dl
+    cmpb $0, %dl                  # check if we reached end of data
+    je .string_not_found          # jump to string not found if we actually are at the end of %ebx
+    cmpb %dl, %al                 # compare the 2 chars in %dl, %al
     je .check_string              # if 2 chars match we check if its the word we are searching for
     inc %ebx                      # if not we inc %ebx to keep looking for the wanted char
-    cmpl $0, %edx                 # check if we reached end of data
-    je .string_not_found          # jump to string not found if we actually are at the end of %ebx
     jmp .string_search_loop       # jump back to the word search loop
     .check_string:                # here is where we check if its actually the string we are searching for
     inc %ebx                      # inc the pointer of the text wall we are checking
-    inc %eax                      # inc the pointer of the text we are searching for
-    movl (%eax), %esi             # move the new char of %eax into %esi
-    movl (%ebx), %edx             # move the new char of %ebx into %edx
-    cmpl %esi, %edx               # compare the 2 new chars
+    inc %esi                      # inc the pointer of the text we are searching for
+    movb (%esi), %al              # move the new char of %esi into %al
+    movb (%ebx), %dl              # move the new char of %ebx into %dl
+    cmpb %al, %dl                 # compare the 2 new chars
     je .character_is_equal        # if equal do the extra check at this procedure
     jne .character_is_not_equal   # if not equal do the extra check at this procedure
     .character_is_equal:          # extra logic for if equal clause
@@ -101,16 +102,16 @@
     je .found_str                 # keep looking if we still are not there yet
     jne .check_string             # go to the return true if we are
     .character_is_not_equal:      # if both characters are not equal
-    cmpl $0, %edx                 # check if we are at the end of the text we are checking
+    cmpb $0, %dl                  # check if we are at the end of the text we are checking
     jne .string_search_loop       # back to the string search loop
-    subl %edi, %eax               # subtract and reset the %eax pointer
+    subl %edi, %esi               # subtract and reset the %esi pointer
     movl $1, %edi                 # move 1 back into %edi
     je .string_not_found          # jump to string not found if we are
     .found_str:                   # logic if we found the string
-    movl %eax, %ebx               # move %eax to %ebx as its second return value
-    movl $1, %eax                 # move 1 True into %eax
+    movl %esi, %ebx               # move %esi to %ebx as its second return value
+    movl $1, %eax                 # move 1 True into %esi
     ret                           # return
     .string_not_found:            # logic if we did not find the string
-    movl %eax, %ebx               # move %eax to %ebx as its second return value
-    movl $0, %eax                 # move 0 False into %eax
+    movl %esi, %ebx               # move %esi to %ebx as its second return value
+    movl $0, %eax                 # move 0 False into %esi
     ret                           # return

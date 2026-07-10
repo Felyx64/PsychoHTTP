@@ -37,9 +37,6 @@
     leal SCOM_File_Read_Results, %eax         # link the scom results again to %eax
     call Clear_SCOM                           # clear the scom
 
-    movl $GSCOM_Server_Filter, %eax
-    call nstandard_console_write
-
     call Initialize_Filter_Language           # Initialze the server filter
 
     # create the SA_RESTART handler struct required for the coming syscall. struct is C struct "struct sigaction"
@@ -170,7 +167,9 @@
     .no_get_routeerr:                         # label to jump to if we had no bad request
 
     call Filter_Request                       # filter the request to check if its allowed
-    #? LABEL FOR GDB
+
+    # WE ARE HERE NOW
+
     .done_filtering:
     cmpl $0, %eax                             # look what the filter said about the request
     je .request_allowed                       # jump it request is allowed
