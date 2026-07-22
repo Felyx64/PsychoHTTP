@@ -115,3 +115,16 @@
     movl %esi, %ebx               # move %esi to %ebx as its second return value
     movl $0, %eax                 # move 0 False into %esi
     ret                           # return
+
+  # PARAM (%EAX) the int that needs to be converted to string
+  # PARAM (%EBX) pointer to the first character of the string we need to put the number into
+  # DESCRIPTION: turn int to string
+  IntToString:
+    # find how many digets there are in the int
+
+
+
+    # cut the int to its indevidual digets
+    # convert them to string
+    # push them to the pointer
+    ret

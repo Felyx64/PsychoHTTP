@@ -168,8 +168,6 @@
 
     call Filter_Request                       # filter the request to check if its allowed
 
-    # WE ARE HERE NOW
-
     .done_filtering:
     cmpl $0, %eax                             # look what the filter said about the request
     je .request_allowed                       # jump it request is allowed
@@ -190,6 +188,9 @@
     .start_shutdown_process:                  # label we need to jump to if we need to shutdown the server
 
     call program_exit
+
+# server logger goes here
+.include "/home/f65/Documents/proj/PsychoHTTP/src/log/logger.s"
 
 # middleware goes here
 .include "/home/f65/Documents/proj/PsychoHTTP/src/middleware/filter_request.s"
