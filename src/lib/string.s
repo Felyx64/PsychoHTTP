@@ -120,11 +120,17 @@
   # PARAM (%EBX) pointer to the first character of the string we need to put the number into
   # DESCRIPTION: turn int to string
   IntToString:
-    # find how many digets there are in the int
-
+    pushl %eax
+    pushl %ebx
+    call Math_Logarithm10
+    popl %ecx
+    popl %ebx
 
 
     # cut the int to its indevidual digets
+
+
+
     # convert them to string
     # push them to the pointer
     ret
