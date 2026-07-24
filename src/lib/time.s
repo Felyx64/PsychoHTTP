@@ -1,11 +1,61 @@
+.section .data
+    time_buf:
+      .long 0
+
 .section .text
+
+  # RETURNS (%EAX) THE CURRENT UNIX TIME
+  # OVERWRITES %EAX, %EBX
+  get_unix_sec:
+    movl $13, %eax                        # move sys_time syscall id into %eax
+    movl $time_buf, %ebx                  # tell sys_time where do send to unix time to
+    int $0x80                             # call the syscall
+    movl $time_buf, %eax                  # push the unix time to %eax which we got from the result
+    ret
+
+  # DESCRIPTION: GETS ALL THE
+  # OVERWRITES: ALL REGISTERS
+  # RETURNS (EAX) THE CURRENT YEAR
+  # RETURNS (EBX) THE CURRENT MONTH
+  # RETURNS (ECX) THE CURRENT DAY
+  # RETURNS (EDX) THE CURRENT HOUR
+  # RETURNS (EDI) THE CURRENT MINUTE
   get_full_date:
+    call get_unix_sec                     # get the current unix time
+
+    pushl %eax                            # copy the unix time to the stack as a temp
+    call get_current_year                 # get the year
+    popl %ebx                             # pop the unix time from the stack back to the %ebx register
+    pushl %eax                            # push the year to the stack so it sits there unharmed
+    movl %ebx, %eax                       # move the unix time back to %eax
+    pushl %eax                            # copy the unix time to the stack as a temp
+    call get_current_month                # get the month
+    popl %ebx                             # pop the unix time from the stack back to the %ebx register
+    pushl %eax                            # push the month to the stack so it sits there unharmed
+    movl %ebx, %eax                       # move the unix time back to %eax
+    pushl %eax                            # copy the unix time to the stack as a temp
+    call get_current_day                  # get the day
+    popl %ebx                             # pop the unix time from the stack back to the %ebx register
+    pushl %eax                            # push the day to the stack so it sits there unharmed
+    movl %ebx, %eax                       # move the unix time back to %eax
+    pushl %eax                            # copy the unix time to the stack as a temp
+    call get_current_hour                 # get the hour
+    popl %ebx                             # pop the unix time from the stack back to the %ebx register
+    pushl %eax                            # push the hour to the stack so it sits there unharmed
+    movl %ebx, %eax                       # move the unix time back to %eax
+    call get_current_minute               # get the minute
+    movl %eax, %edi                       # push the current minutes into %edi
+    popl %edx                             # push the current hours into %edx
+    popl %ecx                             # push the current days into %ecx
+    popl %ebx                             # push the current months into %ebx
+    popl %eax                             # push the current year into %eax
     ret
 
   # PARAM: (%EAX) holds current iso data-time
   # DESCRIPTION: gets the current year
   # RETURNS: (%EAX) holds the current year as of today
   # RETURNS: (%EBX) holds info if current year is a leap year and how close are are to one. 1 = not leap year, 4 = leap year
+  # RETURNS: (%EAX) the current year
   get_current_year:
     movl $1, %ebx                         # move 1 into %ebx as we are not in leap year yet
     .get_year_loop:                       # start of loop that gets the year
@@ -28,6 +78,8 @@
   # PARAM: (%EAX) holds current iso data-time
   # DESCRIPTION: gets the current momth of the year
   # RETURNS: (%EAX) holds the current month of the year
+  # OVERWRITES: %ECX %EDX
+  # RETURNS: (%EAX) the current month
   get_current_month:
     pushl %eax                            # push the iso int to the stack tempoirly
     call get_current_year                 # get the current year so we can tell if its a leap year or not
@@ -91,6 +143,8 @@
 
   # PARAM: (%EAX) holds current iso data-time
   # RETURNS: (%EAX) holds the current day of the month
+  # OVERWRITES: %ECX, %EDX
+  # RETURNS: (%EAX) the current day
   get_current_day:
     call get_current_month
     movl $NUMBERS_IN_DAY, %ecx
@@ -99,6 +153,8 @@
 
   # PARAM: (%EAX) holds current iso data-time
   # RETURNS: (%EAX) holds the current hour
+  # OVERWRITES: %ECX, %EDX
+  # RETURNS: (%EAX) the current hour
   get_current_hour:
     movl $NUMBERS_IN_HOURS, %ecx
     xorl %edx, %edx
@@ -108,6 +164,8 @@
 
   # PARAM: (%EAX) holds current iso data-time
   # RETURNS: (%EAX) holds the current minute
+  # OVERWRITES: %ECX, %EDX
+  # RETURNS: (%EAX) the current minute
   get_current_minute:
     movl $NUMBERS_IN_SECONDS, %ecx
     xorl %edx, %edx

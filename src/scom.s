@@ -10,6 +10,12 @@
   SCOM_File_Read_Results:
     .space 1024
 
+  SCOM_File_Write_Data:
+    .space 1024
+
+  SCOM_IntStr_Convert_Results:
+    .space 512
+
   GSCOM_Server_Filter:
     .space 1024
 

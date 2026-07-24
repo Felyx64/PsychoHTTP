@@ -117,20 +117,33 @@
     ret                           # return
 
   # PARAM (%EAX) the int that needs to be converted to string
-  # PARAM (%EBX) pointer to the first character of the string we need to put the number into
+  # PARAM (%EDI) pointer to the first character of the string we need to put the number into
   # DESCRIPTION: turn int to string
+  # OVERWRITES: EBX, ECX, ESI
+  # RETURNS (%EDI) first char of the converted int to string
   IntToString:
-    pushl %eax
-    pushl %ebx
-    call Math_Logarithm10
-    popl %ecx
-    popl %ebx
-
-
-    # cut the int to its indevidual digets
-
-
-
-    # convert them to string
-    # push them to the pointer
+    movl $0, %ecx                 # move 0 into the counter
+    .int_str_convert_loop:        # start converting the int to string
+    xorl %edx, %edx               # reset the insertion register
+    movl $10, %ebx                # move 10 into devision for the coming divison operation
+    div %ebx                      # execute %eax = %eax / %ebx
+    addb $0x30, %dl               # add 0x30 to the remainder so it converts fully its char aquivelant
+    movb %dl, -1(%edi,%ecx)       # push the what's now the converted char into the string
+    incl %ecx                     # increment the counter
+    testl %eax, %eax              # now we will check the result we got
+    jnz .convert_loop             # if the result was 0 we are at the end of the loop
+    movb $0, (%edi,%ecx)          # move the null teminator into the string to end it off
+    leal -1(%edi,%ecx), %esi      # get last number of string back into %esi as temp as we need to reverse it now
+    leal (%edi), %edi             # create a link to the first number in the string to %edi
+    .reverse_loop:                # start reversing the string as we now have the string but innverseded
+    cmp %esi, %edi                # compare %esi to %edi to check if we have fully reversed the string
+    jge .strint_convert_done      # jump to convertsion done if it is
+    movb -1(%esi), %dl            # grab char 1
+    movb -1(%edi), %al            # grab char 2
+    movb %dl, -1(%edi)            # place char 1
+    movb %al, (%esi)              # place char 2
+    decl %esi                     # decmrement %esi
+    incl %edi                     # increment %edi
+    jmp .reverse_loop             # jump back to start of loop
+    .strint_convert_done:         # if everything is done go here
     ret

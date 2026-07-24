@@ -214,7 +214,6 @@
 .include "/home/f65/Documents/proj/PsychoHTTP/src/lib/logic.s"
 .include "/home/f65/Documents/proj/PsychoHTTP/src/lib/string.s"
 .include "/home/f65/Documents/proj/PsychoHTTP/src/lib/fsio.s"
-.include "/home/f65/Documents/proj/PsychoHTTP/src/lib/math_utils.s"
 
 # scom goes in bottom as its globally accessed
 .include "/home/f65/Documents/proj/PsychoHTTP/src/scom.s"

@@ -3,6 +3,8 @@
     .asciz "./config/filter.txt"
   db_fileroute:
     .asciz "./database.txt"
+  log_fileroute:
+    .asciz "./server.log"
   scom_maximalized_error:
     .asciz "Error: scom memory boundry hit! Please edit server src or optamize folder read."
 
@@ -10,6 +12,47 @@
   # file codes:
   # 0 = ./config/filter.txt
   # 1 = ./database.txt
+  # 2 = ./server.log
+
+  #? MAKE APPENDABLE
+  # DESCRIPTION: writes a log to the logfile
+  # PARAM: (%EAX) pointer to the start of the string what where logging
+  Write_File_Log:
+    movl %eax, %esi                     # move the string ptr to the %esi string index register
+    movl $2, %eax                       # move file code 2 server.log into %eax
+    call Open_File_Stream               # open the read-file-stream
+    cmpl $-1, %eax                      # check for error
+    je .bad_log_write_error             # throw error if we found error
+
+    movl $0, %ecx                       # move 0 into %ecx so we can see how big the log is
+    leal SCOM_File_Write_Data, %edi     # link the write scom to the %edi
+    .copy_to_write_data:                # label to start the data writing
+    movb (%esi), %bl                    # move a char from the log to temp %bl
+    movb %bl, (%edi)                    # move the temp item into the scom
+    inc %esi                            # increment log ptr
+    inc %edi                            # increment scom ptr
+    inc %ecx                            # increment length ptr
+    cmpl $1023, %ecx                    # check if we're not overruning scom
+    je .end_of_log_write                # jump if we are
+    cmpb $'\0', %bl                     # check if we're at end of log ptr
+    jne .copy_to_write_data             # jump back if we're still copying
+    .end_of_log_write:                  # end of loop label
+    movl $'\n', (%edi)                  # replace null with new line
+
+    movl %eax, %ebx                     # move the server fd into param 1
+    movl %ecx, %edx                     # move the length of string to write into param 3
+    leal SCOM_File_Write_Data, %ecx     # link the SCOM_File_Write_Data to param 2
+    movl $4, %eax                       # move syscall id to %eax
+    int $0x80                           # trigger syscall 'write'
+
+    movl $6, %eax                       # move syscall id to %eax
+    int $0x80                           # trigger syscall 'close'
+
+    movl %ecx, %eax                     # move the scom to %eax for the coming function
+    call Clear_SCOM                     # clear the scom memory
+
+    .bad_log_write_error:               # go back label
+    ret                                 # return
 
   # reads a file and pushes its data to the scom
   # Param: (%eax) code for which file has to be read
@@ -82,13 +125,18 @@
     file_id_table:                      # table of possible places to go to in the switch statement
       .long is_filter_id                # for if its the filter file
       .long is_db_id                    # for if its the db file
+      .long is_log_id                   # for it its the log file
 
     is_filter_id:                       # start of function return filter file_route
-    leal filter_fileroute, %eax        # link filter file route and return
+    leal filter_fileroute, %eax         # link filter file route and return
     ret                                 # return
 
-    is_db_id:                           # start of function return filter file_route
-    leal db_fileroute, %eax            # link db file route and return
+    is_db_id:                           # start of function return db file_route
+    leal db_fileroute, %eax             # link db file route and return
+    ret                                 # return
+
+    is_log_id:                          # start of function return log file_route
+    leal log_fileroute, %eax            # link log file route and return
     ret                                 # return
 
   # close a potential file read stream
