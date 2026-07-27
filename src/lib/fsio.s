@@ -14,12 +14,12 @@
   # 1 = ./database.txt
   # 2 = ./server.log
 
-  #? MAKE APPENDABLE
   # DESCRIPTION: writes a log to the logfile
   # PARAM: (%EAX) pointer to the start of the string what where logging
   Write_File_Log:
     movl %eax, %esi                     # move the string ptr to the %esi string index register
     movl $2, %eax                       # move file code 2 server.log into %eax
+    movl $1024, %ebx                    # write flag O_APPEND so we are starting at end of file
     call Open_File_Stream               # open the read-file-stream
     cmpl $-1, %eax                      # check for error
     je .bad_log_write_error             # throw error if we found error
@@ -108,10 +108,14 @@
 
   # opens up a read file stream
   # Param (%eax) pointer to file location
+  # Param (%ebx) open file stream flags (optional)
+  # Param (%ecx) the extra flags (optional)
   # RETURNS: (%eax) file_stream or error
   Open_File_Stream:
     call Parse_File_Id                  # get the file from its id
-    movl %eax, %ebx                     # move param into 2nd param
+    movl %ecx, %edx                     # move the extra flags into the 3rd param
+    movl %ebx, %ecx                     # move the flags to the 2nd param
+    movl %eax, %ebx                     # move param into 1st param
     movl $5, %eax                       # move syscall id into first param
     int $0x80                           # call syscall SYS_Open
     ret

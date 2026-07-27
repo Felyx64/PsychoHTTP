@@ -5,6 +5,9 @@
     LogEventCode:
       .long 0
 
+    LogEventTypeID:
+      .long 0
+
 .set CLONE_FLAGS, (0x00000100 | 17)
 
 .section .text
@@ -40,8 +43,6 @@
     log_request:
       # log format `Request: HOST_IP - - [DATE:TIME] "METHOD ROUTE (USER_AGENT)" \n`
       #? MAY REPLACE WITH PUSHB operation
-
-      pushl %esp                              # push the current stack cordinates to the stack so we know where to reset to
 
       # we need \0 so we can search for the begin of the string
       # Write to stack '\0Request: '
@@ -239,18 +240,97 @@
       movl %edi, %eax                         # move the pointer to %eax so we can start logging to the console
       call nstandard_console_write            # log the request log to the console
 
-      # log to log-file
+      movl %edi, %eax                         # move the pointer to %eax so we can start logging to the logfile
+      pushl %edi                              # backup the pointer to the log as we need it to clear the stack
+      call Write_File_Log                     # log the request to the log file
+      popl %eax
 
-      jmp .start_logger_thread
+      subl $2, %eax                           # subtract 2 from %edi so we found the old adress of the stack pointer before we started the log
+      movl %edi, %esp                         # move the old stack adress so we have resetted the stack pointer
+
+      movl $0, %eax                           # move 0 into %eax
+      leal LogEventCode, %ebx                 # link the event code shared memory with %ebx
+      movl %eax, (%ebx)                       # move 0 back into the event code memory to reset the logger
+      jmp .start_logger_thread                # go back to start of logger
 
     log_database:
+      # log format `Database: ACTION - - AMOUNT bytes \n`
+      #? MAY REPLACE WITH PUSHB operation
+      pushl $'D'
+      pushl $'a'
+      pushl $'t'
+      pushl $'a'
+      pushl $'b'
+      pushl $'a'
+      pushl $'s'
+      pushl $'e'
+      pushl $':'
+      pushl $' '
+
+      movl $LogEventTypeID, %eax
+
+      # switch statement
+
+      movl $0, %eax                           # move 0 into %eax
+      leal LogEventCode, %ebx                 # link the event code shared memory with %ebx
+      movl %eax, (%ebx)                       # move 0 back into the event code memory to reset the logger
       jmp .start_logger_thread
 
     log_server_event:
+      # log format `Server: EVENT - - MESSAGE \n`
+      #? MAY REPLACE WITH PUSHB operation
+
+      movl $LogEventTypeID, %eax
+
+      server_log_action_table:                # table of functions which we can jump to once we need to do server log
+        .long invallid_serverlog              # (0) if invalled server log: Server: Bad lgid detected. Bailout reccomended! (0x0)
+        .long init_servermsg                  # (1) log: Server: Initializing server
+        .long socket_createdmsg               # (2) log: Server: Socket has been created
+        .long socket_configmsg                # (3) log: Server: Socket has been configured
+        .long socket_initmsg                  # (4) log: Server: Socket has been Initialized...
+        .long socket_listeningmsg             # (5) log: Server: Socket now listening onto port 7870
+
+        invallid_serverlog:
+          # Server: Bad lgid detected. Bailout reccomended! (0x0)
+          movl $Log_Server_Status_BADLGID_ERR, %eax
+          call nstandard_console_write
+          jmp .logged_svr_msg
+        init_servermsg:
+          # Server: Initializing server
+          movl $Log_Server_Status_Initializing, %eax
+          call nstandard_console_write
+          jmp .logged_svr_msg
+        socket_createdmsg:
+          # Server: Socket has been created
+          movl $Log_Server_Status_Created_System_Socket, %eax
+          call nstandard_console_write
+          jmp .logged_svr_msg
+        socket_configmsg:
+          # Server: Socket has been configured
+          movl $Log_Server_Status_Configured_System_Socket, %eax
+          call nstandard_console_write
+          jmp .logged_svr_msg
+        socket_initmsg:
+          # Server: Socket has been Initialized...
+          movl $Log_Server_Status_Initialized_server_socket, %eax
+          call nstandard_console_write
+          jmp .logged_svr_msg
+        socket_listeningmsg:
+          # Server: Socket now listening onto port 7870
+          movl $Log_Server_Status_now_listening, %eax
+          call nstandard_console_write
+          jmp .logged_svr_msg
+
+      .logged_svr_msg:
+
+      movl $0, %eax                           # move 0 into %eax
+      leal LogEventCode, %ebx                 # link the event code shared memory with %ebx
+      movl %eax, (%ebx)                       # move 0 back into the event code memory to reset the logger
       jmp .start_logger_thread
 
     # request log done here
 
+    # switch statement
 
     jmp .start_logger_thread                  # 2nd thread ends here but goes back to the start of the loop
     .initializtion_done:
@@ -268,3 +348,18 @@
 
   Request_User_Agent_Header:
     .ascii "User-Agent: "
+
+# this section stores random server status constants for logging
+.section .data
+  Log_Server_Status_BADLGID_ERR:
+    .asciz "Server: Bad lgid detected. Bailout reccomended! (0x0)"
+  Log_Server_Status_Initializing:
+    .asciz "Server: Initializing server"
+  Log_Server_Status_Created_System_Socket:
+    .asciz "Server: Socket has been created"
+  Log_Server_Status_Configured_System_Socket:
+    .asciz "Server: Socket has been configured"
+  Log_Server_Status_Initialized_server_socket:
+    .asciz "Server: Socket has been Initialized..."
+  Log_Server_Status_now_listening:
+    .asciz "Server: Socket now listening onto port 7870" #? FIX bad htons(7870)
