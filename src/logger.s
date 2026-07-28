@@ -27,7 +27,7 @@
 
     # add sleep until not 0
 
-    leal LogEventCode, %eax   # initialize shared main-log thread event memory
+    movl $LogEventCode, %eax                # initialize shared main-log thread event memory
     jmp *log_action_table(,(%eax),4)        # switch over the value stored in %eax to check if we need to log something
 
     log_action_table:                       # table of functions which we can jump to once the event listiner gets woken up
@@ -243,19 +243,17 @@
       movl %edi, %eax                         # move the pointer to %eax so we can start logging to the logfile
       pushl %edi                              # backup the pointer to the log as we need it to clear the stack
       call Write_File_Log                     # log the request to the log file
-      popl %eax
+      popl %eax                               # bring %edi back into %eax
 
       subl $2, %eax                           # subtract 2 from %edi so we found the old adress of the stack pointer before we started the log
       movl %edi, %esp                         # move the old stack adress so we have resetted the stack pointer
 
-      movl $0, %eax                           # move 0 into %eax
-      leal LogEventCode, %ebx                 # link the event code shared memory with %ebx
-      movl %eax, (%ebx)                       # move 0 back into the event code memory to reset the logger
-      jmp .start_logger_thread                # go back to start of logger
+      jmp .logged_svr_msg
 
     log_database:
       # log format `Database: ACTION - - AMOUNT bytes \n`
       #? MAY REPLACE WITH PUSHB operation
+      pushl $'\0'
       pushl $'D'
       pushl $'a'
       pushl $'t'
@@ -268,71 +266,156 @@
       pushl $' '
 
       movl $LogEventTypeID, %eax
+      jmp *database_action_log_table(,(%eax),4)
 
-      # switch statement
+      database_action_log_table:
+        .long invallid_databaselog    # (0) log: database is invallid
+        .long write_databaselog       # (1) log: database is writing
+        .long read_databaselog        # (2) log: database is reading
+
+      invallid_databaselog:
+        # log message that database log is invallid
+        pushl $'I'
+        pushl $'N'
+        pushl $'V'
+        pushl $'A'
+        pushl $'L'
+        pushl $'\n'
+
+        call nstandard_console_write
+        call Write_File_Log
+        jmp .logged_svr_msg
+      write_databaselog:
+        # log if we are writing
+        pushl $'W'
+        pushl $'R'
+        pushl $'I'
+        pushl $'T'
+        pushl $'E'
+        pushl $' '
+
+        #? DO LATER GRAB FROM SCOM MEMORY
+
+        call nstandard_console_write
+        call Write_File_Log
+        jmp .logged_svr_msg
+      read_databaselog:
+        # log if we are reading
+        pushl $'R'
+        pushl $'E'
+        pushl $'A'
+        pushl $'D'
+        pushl $' '
+
+        #? DO LATER GRAB FROM SCOM MEMORY
+
+        call nstandard_console_write
+        call Write_File_Log
+        jmp .logged_svr_msg
+
 
       movl $0, %eax                           # move 0 into %eax
       leal LogEventCode, %ebx                 # link the event code shared memory with %ebx
       movl %eax, (%ebx)                       # move 0 back into the event code memory to reset the logger
+      leal LogEventTypeID, %ebx               # link the second event code shared memory with %ebx
+      movl %eax, (%ebx)                       # move 0 back into the second event code memory to reset the logger
       jmp .start_logger_thread
 
     log_server_event:
       # log format `Server: EVENT - - MESSAGE \n`
-      #? MAY REPLACE WITH PUSHB operation
 
-      movl $LogEventTypeID, %eax
+      movl $LogEventTypeID, %eax              # grab the log event id and store it in %eax
+      jmp *server_log_action_table(,(%eax),4) # jump to the location the id is pointing at
 
       server_log_action_table:                # table of functions which we can jump to once we need to do server log
-        .long invallid_serverlog              # (0) if invalled server log: Server: Bad lgid detected. Bailout reccomended! (0x0)
-        .long init_servermsg                  # (1) log: Server: Initializing server
-        .long socket_createdmsg               # (2) log: Server: Socket has been created
-        .long socket_configmsg                # (3) log: Server: Socket has been configured
-        .long socket_initmsg                  # (4) log: Server: Socket has been Initialized...
-        .long socket_listeningmsg             # (5) log: Server: Socket now listening onto port 7870
+        .long invallid_serverlog              # (0) log:  Server: Error - - Bad lgid detected. Bailout reccomended! (0x0)
+        .long init_servermsg                  # (1) log:  Server: Info - - Initializing server
+        .long socket_createdmsg               # (2) log:  Server: Info - - Socket has been created
+        .long socket_configmsg                # (3) log:  Server: Info - - Socket has been configured
+        .long socket_initmsg                  # (4) log:  Server: Info - - Socket has been Initialized...
+        .long socket_listeningmsg             # (5) log:  Server: Info - - Socket now listening onto port 7870
+        .long database_connectingdbmsg        # (6) log:  Server: Info - - Database is currently connecting
+        .long database_connectedmsg           # (7) log:  Server: Info - - Database is now connected!
+        .long database_disconnected           # (8) log:  Server: Info - - Database has been disconnected
+        .long logger_has_been_initialized     # (9) log:  Server: Info - - Logger has been Initialized
+        .long turning_off_logger              # (10) log: Server: Info - - Logger has been Disabled
 
         invallid_serverlog:
-          # Server: Bad lgid detected. Bailout reccomended! (0x0)
+          # Server: Error - - Bad lgid detected. Bailout reccomended! (0x0)
           movl $Log_Server_Status_BADLGID_ERR, %eax
           call nstandard_console_write
+          call Write_File_Log
           jmp .logged_svr_msg
         init_servermsg:
-          # Server: Initializing server
+          # Server: Info - - Initializing server
           movl $Log_Server_Status_Initializing, %eax
           call nstandard_console_write
+          call Write_File_Log
           jmp .logged_svr_msg
         socket_createdmsg:
-          # Server: Socket has been created
+          # Server: Info - - Socket has been created
           movl $Log_Server_Status_Created_System_Socket, %eax
           call nstandard_console_write
+          call Write_File_Log
           jmp .logged_svr_msg
         socket_configmsg:
-          # Server: Socket has been configured
+          # Server: Info - - Socket has been configured
           movl $Log_Server_Status_Configured_System_Socket, %eax
           call nstandard_console_write
+          call Write_File_Log
           jmp .logged_svr_msg
         socket_initmsg:
-          # Server: Socket has been Initialized...
+          # Server: Info - - Socket has been Initialized...
           movl $Log_Server_Status_Initialized_server_socket, %eax
           call nstandard_console_write
+          call Write_File_Log
           jmp .logged_svr_msg
         socket_listeningmsg:
-          # Server: Socket now listening onto port 7870
+          # Server: Info - - Socket now listening onto port 7870
           movl $Log_Server_Status_now_listening, %eax
           call nstandard_console_write
+          call Write_File_Log
+          jmp .logged_svr_msg
+        database_connectingdbmsg:
+          # Server: Info - - Database is currently connecting
+          movl $Log_Server_Status_database_connecting, %eax
+          call nstandard_console_write
+          call Write_File_Log
+          jmp .logged_svr_msg
+        database_connectedmsg:
+          # Server: Info - - Database is now connected!
+          movl $Log_Server_Status_database_Connected, %eax
+          call nstandard_console_write
+          call Write_File_Log
+          jmp .logged_svr_msg
+        database_disconnected:
+          # Server: Info - - Database has been disconnected
+          movl $Log_Server_Status_database_disconnected, %eax
+          call nstandard_console_write
+          call Write_File_Log
+          jmp .logged_svr_msg
+        logger_has_been_initialized:
+          # Server: Info - - Logger has been Initialized
+          movl $Log_Server_Status_logger_initialized, %eax
+          call nstandard_console_write
+          call Write_File_Log
+          jmp .logged_svr_msg
+        turning_off_logger:
+          # Server: Info - - Logger has been Disabled
+          movl $Log_Server_Status_Logger_Disabled, %eax
+          call nstandard_console_write
+          call Write_File_Log
           jmp .logged_svr_msg
 
-      .logged_svr_msg:
+      .logged_svr_msg:                        # universal endpoint for all logged messages
 
       movl $0, %eax                           # move 0 into %eax
       leal LogEventCode, %ebx                 # link the event code shared memory with %ebx
       movl %eax, (%ebx)                       # move 0 back into the event code memory to reset the logger
+      leal LogEventTypeID, %ebx               # link the second event code shared memory with %ebx
+      movl %eax, (%ebx)                       # move 0 back into the second event code memory to reset the logger
       jmp .start_logger_thread
 
-    # request log done here
-
-    # switch statement
-
-    jmp .start_logger_thread                  # 2nd thread ends here but goes back to the start of the loop
     .initializtion_done:
     ret
 
@@ -352,14 +435,24 @@
 # this section stores random server status constants for logging
 .section .data
   Log_Server_Status_BADLGID_ERR:
-    .asciz "Server: Bad lgid detected. Bailout reccomended! (0x0)"
+    .asciz "Server: Error - - Bad lgid detected. Bailout reccomended! (0x0)"
   Log_Server_Status_Initializing:
-    .asciz "Server: Initializing server"
+    .asciz "Server: Info - - Initializing server"
   Log_Server_Status_Created_System_Socket:
-    .asciz "Server: Socket has been created"
+    .asciz "Server: Info - - Socket has been created"
   Log_Server_Status_Configured_System_Socket:
-    .asciz "Server: Socket has been configured"
+    .asciz "Server: Info - - Socket has been configured"
   Log_Server_Status_Initialized_server_socket:
-    .asciz "Server: Socket has been Initialized..."
+    .asciz "Server: Info - - Socket has been Initialized..."
   Log_Server_Status_now_listening:
-    .asciz "Server: Socket now listening onto port 7870" #? FIX bad htons(7870)
+    .asciz "Server: Info - - Socket now listening onto port 7870"
+  Log_Server_Status_database_connecting:
+    .asciz "Server: Info - - Database is currently connecting"
+  Log_Server_Status_database_Connected:
+    .asciz "Server: Info - - Database is now connected!"
+  Log_Server_Status_database_disconnected:
+    .asciz "Server: Info - - Database has been disconnected"
+  Log_Server_Status_logger_initialized:
+    .asciz "Server: Info - - Logger has been Initialized"
+  Log_Server_Status_Logger_Disabled:
+    .asciz "Server: Info - - Logger has been Disabled"

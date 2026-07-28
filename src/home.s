@@ -109,7 +109,7 @@
     # initialize server config struct here
     subl  $16, %esp                           # Creates a stack allocation of 16 needed for this struct
     movw  $2, (%esp)                          # moves 2 (AF_INET) into the struct which tells again that the server is ipv4
-    movw  $0x391E, 2(%esp)                    # moves `Big-Edian` version of number 7870 into the struct so htons is not required
+    movw  $0xBE1E, 2(%esp)                    # moves `Big-Edian` version of number 7870 into the struct so htons is not required
     movl  $0x0100007F, 4(%esp)                # moves `Big-Edian` version of current adress im reading of 127.0.0.1 into the struct so htons is not required
 
     movl 16(%esp), %ebx                       # move server fd into %ebx as needed for the setsockopt syscall
