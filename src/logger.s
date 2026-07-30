@@ -1,16 +1,16 @@
 .section .bss
-    LoggerMemory:
-      .space 4096
+  LoggerMemory:
+    .space 4096
 
-    LogEventCode:
-      .long 0
+  LogEventCode:
+    .long 0
 
-    LogEventTypeID:
-      .long 0
+  LogEventTypeID:
+    .long 0
 
-    FutexTimeout:
-      .long 2
-      .long 0
+  FutexTimeout:
+    .long 2
+    .long 0
 
 .set CLONE_FLAGS, (0x00000100 | 17)
 .set FUTEX_FLAGS, (FUTEX_WAIT | FUTEX_PRIVATE_FLAG)
@@ -58,6 +58,7 @@
       .long log_request                     # log format `Request: HOST_IP - - [DATE:TIME] "METHOD ROUTE (USER_AGENT)" \n`
       .long log_database                    # log format `Database: ACTION - - AMOUNT bytes \n`
       .long log_server_event                # log format `Server: EVENT - - MESSAGE \n`
+      .long log_disable                     # ends the logging all togheter
 
     invallid_log:
       # do nothing
@@ -361,7 +362,14 @@
         .long database_connectedmsg           # (7) log:  Server: Info - - Database is now connected!
         .long database_disconnected           # (8) log:  Server: Info - - Database has been disconnected
         .long logger_has_been_initialized     # (9) log:  Server: Info - - Logger has been Initialized
-        .long turning_off_logger              # (10) log: Server: Info - - Logger has been Disabled
+        .long server_standard_exit            # (10) log: Server: Info - - Server is currently shutting down..
+        .long server_bailout_sockererr        # (11) log: Server: Error - - Bad socket creation. Exiting server.
+        .long server_bailout_sockconferr      # (12) log: Server: Error - - Bad config. Exiting Server.
+        .long server_bailout_sockiniterr      # (13) log: Server: Error - - Bad socket initialization. Exiting..
+        .long server_bailout_badsvr           # (14) log: Server: Error - - Bad server or listener. Exiting..
+        .long server_bailout_bad_generic      # (15) log: Server: Error - - Bad or inval init. Exiting...
+        .long server_bailout_bailout          # (16) log: Server: Error - - Uncat Error Flagged. Exiting..
+        .long server_developer_exit           # (17) log: Server: Error - - Devexitt
 
         invallid_serverlog:
           # Server: Error - - Bad lgid detected. Bailout reccomended! (0x0)
@@ -423,9 +431,51 @@
           call nstandard_console_write
           call Write_File_Log
           jmp .logged_svr_msg
-        turning_off_logger:
-          # Server: Info - - Logger has been Disabled
-          movl $Log_Server_Status_Logger_Disabled, %eax
+        server_standard_exit:
+          # Server: Info - - Server is currently shutting down..
+          movl $Log_Serrver_Status_Shutdown, %eax
+          call nstandard_console_write
+          call Write_File_Log
+          jmp .logged_svr_msg
+        server_bailout_sockererr:
+          # Server: Error - - Bad socket creation. Exiting server.
+          movl $Log_Serrver_Status_Err_BadSock, %eax
+          call nstandard_console_write
+          call Write_File_Log
+          jmp .logged_svr_msg
+        server_bailout_sockconferr:
+          # Server: Error - - Bad config. Exiting Server.
+          movl $Log_Serrver_Status_Err_BadConf, %eax
+          call nstandard_console_write
+          call Write_File_Log
+          jmp .logged_svr_msg
+        server_bailout_sockiniterr:
+          # Server: Error - - Bad socket initialization. Exiting..
+          movl $Log_Serrver_Status_Err_BadInit, %eax
+          call nstandard_console_write
+          call Write_File_Log
+          jmp .logged_svr_msg
+        server_bailout_badsvr:
+          # Server: Error - - Bad server or listener. Exiting..
+          movl $Log_Serrver_Status_Err_BadList, %eax
+          call nstandard_console_write
+          call Write_File_Log
+          jmp .logged_svr_msg
+        server_bailout_bad_generic:
+          # Server: Error - - Bad or inval init. Exiting...
+          movl $Log_Serrver_Status_Err_BadSvrInit, %eax
+          call nstandard_console_write
+          call Write_File_Log
+          jmp .logged_svr_msg
+        server_bailout_bailout:
+          # Server: Error - - Uncat Error Flagged. Exiting..
+          movl $Log_Serrver_Status_Err_Unkown_Error, %eax
+          call nstandard_console_write
+          call Write_File_Log
+          jmp .logged_svr_msg
+        server_developer_exit:
+          # Server: Error - - Devexitt
+          movl $Log_Serrver_Status_Err_Developer_Exit, %eax
           call nstandard_console_write
           call Write_File_Log
           jmp .logged_svr_msg
@@ -439,12 +489,19 @@
       movl %eax, (%ebx)                       # move 0 back into the second event code memory to reset the logger
       jmp .start_logger_thread
 
+    log_disable:
+      # Server: Info - - Logger has been Disabled
+      movl $Log_Server_Status_Logger_Disabled, %eax
+      call nstandard_console_write
+      call Write_File_Log
+
+      # kill the thread
+      movl $1, %eax                              # move 1 into %EAX to call syscall (exit)
+      movl $78, %ebx                             # exit with code 78 instead of 1 for debug purposes (thread_exit)
+      int $0x80                                  # trigger (exit) syscall itself
+
     .initializtion_done:
     ret
-
-
-    cmpl $0, %eax
-    jne  .initializtion_done
 
 
 # this file stores keywords we will be searching for in SCOM or other data during the logging process
@@ -458,24 +515,40 @@
 # this section stores random server status constants for logging
 .section .data
   Log_Server_Status_BADLGID_ERR:
-    .asciz "Server: Error - - Bad lgid detected. Bailout reccomended! (0x0)"
+    .asciz "Server: Error - - Bad lgid detected. Bailout reccomended! (0x0) \n"
   Log_Server_Status_Initializing:
-    .asciz "Server: Info - - Initializing server"
+    .asciz "Server: Info - - Initializing server \n"
   Log_Server_Status_Created_System_Socket:
-    .asciz "Server: Info - - Socket has been created"
+    .asciz "Server: Info - - Socket has been created \n"
   Log_Server_Status_Configured_System_Socket:
-    .asciz "Server: Info - - Socket has been configured"
+    .asciz "Server: Info - - Socket has been configured \n"
   Log_Server_Status_Initialized_server_socket:
-    .asciz "Server: Info - - Socket has been Initialized..."
+    .asciz "Server: Info - - Socket has been Initialized... \n"
   Log_Server_Status_now_listening:
-    .asciz "Server: Info - - Socket now listening onto port 7870"
+    .asciz "Server: Info - - Socket now listening onto port 7870 \n"
   Log_Server_Status_database_connecting:
-    .asciz "Server: Info - - Database is currently connecting"
+    .asciz "Server: Info - - Database is currently connecting \n"
   Log_Server_Status_database_Connected:
-    .asciz "Server: Info - - Database is now connected!"
+    .asciz "Server: Info - - Database is now connected! \n"
   Log_Server_Status_database_disconnected:
-    .asciz "Server: Info - - Database has been disconnected"
+    .asciz "Server: Info - - Database has been disconnected \n"
   Log_Server_Status_logger_initialized:
-    .asciz "Server: Info - - Logger has been Initialized"
+    .asciz "Server: Info - - Logger has been Initialized \n"
   Log_Server_Status_Logger_Disabled:
-    .asciz "Server: Info - - Logger has been Disabled"
+    .asciz "Server: Info - - Logger has been Disabled \n"
+  Log_Serrver_Status_Shutdown:
+    .asciz "Server: Info - - Server is currently shutting down.."
+  Log_Serrver_Status_Err_BadSock:
+    .asciz "Server: Error - - Bad socket creation. Exiting server."
+  Log_Serrver_Status_Err_BadConf:
+    .asciz "Server: Error - - Bad config. Exiting Server."
+  Log_Serrver_Status_Err_BadInit:
+    .asciz "Server: Error - - Bad socket initialization. Exiting.."
+  Log_Serrver_Status_Err_BadList:
+    .asciz "Server: Error - - Bad server or listener. Exiting.."
+  Log_Serrver_Status_Err_BadSvrInit:
+    .asciz "Server: Error - - Bad or inval init. Exiting..."
+  Log_Serrver_Status_Err_Unkown_Error:
+    .asciz "Server: Error - - Uncat Error Flagged. Exiting.."
+  Log_Serrver_Status_Err_Developer_Exit:
+    .asciz "Server: Error - - Devexitt"

@@ -1,44 +1,9 @@
-.section .data
-  # configuration errors
-
-  Edom_Err_Msg:
-    .asciz "Configure Err: (Edom), Timeout is too big! \n"
-
-  Einval_Err_Msg:
-    .asciz "Configure Err: (Einval), Invallid configuration! \n"
-
-  Eisconn_Err_Msg:
-    .asciz "Configure Err: (Eisconn), Socket Already Connected! \n"
-
-  Enoprotoopt_Err_Msg:
-    .asciz "Configure Err: (Enoprotoopt), Option Not Supported by this protocol! \n"
-
-  Enotsock_Err_Msg:
-    .asciz "Configure Err: (Enotsock), Invallid Socket FD! \n"
-
-  Enomen_Err_Msg:
-    .asciz "Configure Err: (Enomem), Isuficient Memory! \n"
-
-  EnoBufs_Err_Msg:
-    .asciz "Configure Err: (EnoBufs), Isuficient Resources! \n"
-
-  Unkown_Config_Err_Msg:
-    .asciz "Configure Err: (?!?!), Unkown or undoc ERR! \n"
-
-  Efault_Err_Msg:
-    .asciz "Configure Err: (EFAULT), Bad Optval! \n"
-
-  # initialize errors
-  Unkown_Init_Err_Msg:
-    .asciz "InitErr: (?!?!), Unkown or undoc ERR! \n"
-
 .section .text
   # CONFIGURE_SERVER: CONFIGURES THE SERVER BEFORE ITS BEEN ASSIGNED ITS ADDRESS VIA SYSCALL (setsockopt)
   # OVERWRITES: EAX, ECX, EDX, ESI, EDI
   # PARAMETERS: (EBX): NEEDS TO CONTAIN SERVER FD
   # RETURNS: (EAX) EXIT CODE OF THE OPERATION
 configure_server:
-    # SET CONFIG SO_REUSEADDR
     movl $366, %eax                         # move 366 which is syscall id of (setsockopt) into EAX for for the syscall
     # server's fd is inside the %ebx register
     movl $1, %ecx                           # move 1 aka (SOL_SOCKET) into %ECX register.
@@ -53,85 +18,7 @@ configure_server:
     cmpl $0, %eax                           # checks if bind action has returned an error or not
     je .configuration_succesfull            # if no error then jump to the creation done flag
 
-    neg %eax                                # make the number in %EAX positive if it is an error so it can be analyzed
-
-    cmpl $33, %eax                          # check for error: EDOM
-    jne .not_edom_error                     # jump if not error "EDOM"
-
-    movl $Edom_Err_Msg, %eax                # Move the Error to print into the %ECX parameter
-    call nstandard_console_write            # call the console write procedure
     movl $-1, %eax                          # move -1 into %EAX signaling an error
-    jmp .configuration_succesfull           # jump to the end of the function
-
-    .not_edom_error:
-    cmpl $22, %eax                          # check for error: EINVAL
-    jne .not_einval_error                   # jump if not error "EINVAL"
-
-    movl $Einval_Err_Msg, %eax              # Move the Error to print into the %ECX parameter
-    call nstandard_console_write            # call the console write procedure
-    movl $-1, %eax                          # move -1 into %EAX signaling an error
-    jmp .configuration_succesfull           # jump to the end of the function
-
-    .not_einval_error:
-    cmpl $106, %eax                         # check for error: EISCONN
-    jne .not_eisconn_error                  # jump if not error "EISCONN"
-
-    movl $Eisconn_Err_Msg, %eax             # Move the Error to print into the %ECX parameter
-    call nstandard_console_write            # call the console write procedure
-    movl $-1, %eax                          # move -1 into %EAX signaling an error
-    jmp .configuration_succesfull           # jump to the end of the function
-
-    .not_eisconn_error:
-    cmpl $92, %eax                          # check for error: ENOPROTOOPT
-    jne .not_enoprotoopt_error              # jump if not error "ENOPROTOOPT"
-
-    movl $Enoprotoopt_Err_Msg, %eax         # Move the Error to print into the %ECX parameter
-    call nstandard_console_write            # call the console write procedure
-    movl $-1, %eax                          # move -1 into %EAX signaling an error
-    jmp .configuration_succesfull           # jump to the end of the function
-
-    .not_enoprotoopt_error:
-    cmpl $88, %eax                          # check for error: ENOTSOCK
-    jne .not_enotsock_error                 # jump if not error "ENOTSOCK"
-
-    movl $Enotsock_Err_Msg, %eax            # Move the Error to print into the %ECX parameter
-    call nstandard_console_write            # call the console write procedure
-    movl $-1, %eax                          # move -1 into %EAX signaling an error
-    jmp .configuration_succesfull           # jump to the end of the function
-
-    .not_enotsock_error:
-    cmpl $12, %eax                          # check for error: ENOMEM
-    jne .not_enomem_error                   # jump if not error "ENOMEM"
-
-    movl $Enomen_Err_Msg, %eax              # Move the Error to print into the %ECX parameter
-    call nstandard_console_write            # call the console write procedure
-    movl $-1, %eax                          # move -1 into %EAX signaling an error
-    jmp .configuration_succesfull           # jump to the end of the function
-
-    .not_enomem_error:
-    cmpl $105, %eax                         # check for error: ENOBUFS
-    jne .not_enobufs_error                  # jump if not error "ENOBUFS"
-
-    movl $EnoBufs_Err_Msg, %eax             # Move the Error to print into the %ECX parameter
-    call nstandard_console_write            # call the console write procedure
-    movl $-1, %eax                          # move -1 into %EAX signaling an error
-    jmp .configuration_succesfull           # jump to the end of the function
-
-    .not_enobufs_error:
-    cmpl $14, %eax                         # check for error: EFAULT
-    jne .not_efault_error                  # jump if not error "EFAULT"
-
-    movl $Efault_Err_Msg, %eax              # Move the Error to print into the %ECX parameter
-    call nstandard_console_write            # call the console write procedure
-    movl $-1, %eax                          # move -1 into %EAX signaling an error
-    jmp .configuration_succesfull           # jump to the end of the function
-
-    .not_efault_error:
-
-    movl $Unkown_Config_Err_Msg, %eax       # Move the Error to print into the %ECX parameter
-    call nstandard_console_write            # call the console write procedure
-    movl $-1, %eax                          # move -1 into %EAX signaling an error
-    jmp .configuration_succesfull           # jump to the end of the function
 
     .configuration_succesfull:
     ret

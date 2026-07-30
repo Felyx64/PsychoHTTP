@@ -1,22 +1,6 @@
 .global _start
 
 .section .data
-  Init_Message:
-    .asciz "Initializing server...\n"
-
-  Server_Creation_Message:
-    .asciz "Server Socket in krnl Created... \n"
-
-  Server_Configuration_Message:
-    .asciz "Server Socket in krnl Configured... \n"
-
-  Server_Initialization_Message:
-    .asciz "Server Socket in krnl Initialized... \n"
-
-  Server_Listen_Message:
-    .asciz "Server Socket now listening onto port 7870 \n"
-
-.section .data
   .global bailout_handler
   .type exit_handler, @function
 
@@ -79,8 +63,8 @@
     je program_exit_initerr                   # if they didn't shut down the server pramuterly
 
     # show initilization message
-    movl $Init_Message, %eax                  # Move The initialization Message into %ECX
-    call nstandard_console_write              # Engage the write to console from the lib/iostream file
+    movl $1, $LogEventTypeID                  # move the Init message id to the 2nd log param
+    movl $3, $LogEventCode                    # trigger the logger
 
     # start the server itself
     call create_uninitialized_server          # Call function that registers the server in the OS via syscall (socket)
@@ -90,8 +74,8 @@
     pushl %eax                                # Push %eax to stack so we dont need to deal with it in RAM
 
     # show socket creation message
-    movl $Server_Creation_Message, %eax       # Move The Server socket creation Message into %ECX
-    call nstandard_console_write              # Engage the write to console from the lib/iostream file
+    movl $2, $LogEventTypeID                  # move the socket_creation id to the 2nd log param
+    movl $3, $LogEventCode                    # trigger the logger
 
     movl (%esp), %ebx                         # move server fd into %ebx as needed for the setsockopt syscall
 
@@ -103,8 +87,8 @@
     #? ADD EXTRA CONFIGS LIKE (SO_REUSEPORT)
 
     # show socket configuration message
-    movl $Server_Configuration_Message, %eax  # Move The Server socket configuration Message into %ECX
-    call nstandard_console_write              # Engage the write to console from the lib/iostream file
+    movl $3, $LogEventTypeID                  # move the socket_config message id to the 2nd log param
+    movl $3, $LogEventCode                    # trigger the logger
 
     # initialize server config struct here
     subl  $16, %esp                           # Creates a stack allocation of 16 needed for this struct
@@ -121,8 +105,8 @@
     je program_exit_binderr                   # Jump to program exit if the function returned an error
 
     # show socket initialization message
-    movl $Server_Initialization_Message, %eax # Move The Server socket configuration Message into %ECX
-    call nstandard_console_write              # Engage the write to console from the lib/iostream file
+    movl $4, $LogEventTypeID                  # move the sock_init message id to the 2nd log param
+    movl $3, $LogEventCode                    # trigger the logger
 
     # tell the server to start listening on port 7870
     movl 16(%esp), %eax                       # get server fd from stack as 1st param for server
@@ -133,9 +117,8 @@
     movl $0, %ecx                             # mov 0 into the %R8D register which acts as a shutdown signal
     pushl %ecx                                # pushes the checker if loop is done to stack. Ignore the error
 
-    movl $Server_Listen_Message, %eax         # Move the Error to print into the %ECX parameter
-    call nstandard_console_write              # call the console write procedure
-
+    movl $5, $LogEventTypeID                  # move the server_listen message id to the 2nd log param
+    movl $3, $LogEventCode                    # trigger the logger
 
     # http server handling done here
 
@@ -187,7 +170,8 @@
     jmp .server_loop                          # jump back the the start of the loop if there we have not gotten a signal yet
     .start_shutdown_process:                  # label we need to jump to if we need to shutdown the server
 
-    call program_exit
+    movl $0, %eax                             # move 0 into %eax so we dont return with exit code >1
+    call program_exit                         # exit the server
 
 # server logger goes here
 .include "/home/f65/Documents/proj/PsychoHTTP/src/logger.s"
