@@ -35,19 +35,7 @@ configure_server:
     cmpl $0, %eax                           # checks if bind action has returned an error or not
     je .bind_succesfull                     # if no error then jump to the creation done flag
 
-    movl $Unkown_Init_Err_Msg, %ecx         # Move the Error to print into the %ECX parameter
-    call standard_console_write             # call the console write procedure
     movl $-1, %eax                          # move -1 into %EAX signaling an error
-
-    # check for errors on %EAX
-    # errors can be found here: https:#pubs.opengroup.org/onlinepubs/009695099/functions/bind.html
-
-    # BIND ERRORS
-    # EACCES	You tried to bind to a protected port (<1024) without being root.
-    # EADDRINUSE	Another process is already using this port, or it's in TIME_WAIT.
-    # EBADF	sockfd is not a valid file descriptor.
-    # EINVAL	The socket is already bound to an address.
-
 
     .bind_succesfull:
     ret

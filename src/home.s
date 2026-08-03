@@ -1,13 +1,12 @@
 .global _start
 
 .section .data
-  .global bailout_handler
   .type exit_handler, @function
 
   exit_handler:
-    movl $1, %eax                              # move 1 into %EAX to call syscall (exit)
-    movl $99, %ebx                             # exit with code 99 (bailout)
-    int $0x80                                  # trigger (exit) syscall itself
+    movl $1, %ebx                             # move the message id to the 2ndlog param
+    movl $3, %eax                             # move the id into the 1st log param
+    call Log_Message                          # trigger the logger
 
 .section .text
   _start:
@@ -20,6 +19,8 @@
 
     leal SCOM_File_Read_Results, %eax         # link the scom results again to %eax
     call Clear_SCOM                           # clear the scom
+
+    .dont_hang_here:
 
     call Initialize_Filter_Language           # Initialze the server filter
 
@@ -63,8 +64,9 @@
     je program_exit_initerr                   # if they didn't shut down the server pramuterly
 
     # show initilization message
-    movl $1, $LogEventTypeID                  # move the Init message id to the 2nd log param
-    movl $3, $LogEventCode                    # trigger the logger
+    movl $1, %ebx                             # move the message id to the 2ndlog param
+    movl $3, %eax                             # move the id into the 1st log param
+    call Log_Message                          # trigger the logger
 
     # start the server itself
     call create_uninitialized_server          # Call function that registers the server in the OS via syscall (socket)
@@ -74,8 +76,9 @@
     pushl %eax                                # Push %eax to stack so we dont need to deal with it in RAM
 
     # show socket creation message
-    movl $2, $LogEventTypeID                  # move the socket_creation id to the 2nd log param
-    movl $3, $LogEventCode                    # trigger the logger
+    movl $2, %ebx                             # move the message id to the 2nd log param
+    movl $3, %eax                             # move the id into the 1st log param
+    call Log_Message                          # trigger the logger
 
     movl (%esp), %ebx                         # move server fd into %ebx as needed for the setsockopt syscall
 
@@ -87,8 +90,9 @@
     #? ADD EXTRA CONFIGS LIKE (SO_REUSEPORT)
 
     # show socket configuration message
-    movl $3, $LogEventTypeID                  # move the socket_config message id to the 2nd log param
-    movl $3, $LogEventCode                    # trigger the logger
+    movl $3, %ebx                             # move the message id to the 2nd log param
+    movl $3, %eax                             # move the id into the 1st log param
+    call Log_Message                          # trigger the logger
 
     # initialize server config struct here
     subl  $16, %esp                           # Creates a stack allocation of 16 needed for this struct
@@ -105,8 +109,9 @@
     je program_exit_binderr                   # Jump to program exit if the function returned an error
 
     # show socket initialization message
-    movl $4, $LogEventTypeID                  # move the sock_init message id to the 2nd log param
-    movl $3, $LogEventCode                    # trigger the logger
+    movl $4, %ebx                             # move the message id to the 2nd log param
+    movl $3, %eax                             # move the id into the 1st log param
+    call Log_Message                          # trigger the logger
 
     # tell the server to start listening on port 7870
     movl 16(%esp), %eax                       # get server fd from stack as 1st param for server
@@ -117,8 +122,9 @@
     movl $0, %ecx                             # mov 0 into the %R8D register which acts as a shutdown signal
     pushl %ecx                                # pushes the checker if loop is done to stack. Ignore the error
 
-    movl $5, $LogEventTypeID                  # move the server_listen message id to the 2nd log param
-    movl $3, $LogEventCode                    # trigger the logger
+    movl $5, %ebx                             # move the message id to the 2nd log param
+    movl $3, %eax                             # move the id into the 1st log param
+    call Log_Message                          # trigger the logger
 
     # http server handling done here
 
@@ -195,9 +201,10 @@
 
 # lib goes in near bottom
 .include "/home/f65/Documents/proj/PsychoHTTP/src/lib/iostream.s"
-.include "/home/f65/Documents/proj/PsychoHTTP/src/lib/logic.s"
 .include "/home/f65/Documents/proj/PsychoHTTP/src/lib/string.s"
 .include "/home/f65/Documents/proj/PsychoHTTP/src/lib/fsio.s"
+.include "/home/f65/Documents/proj/PsychoHTTP/src/lib/exit.s"
+.include "/home/f65/Documents/proj/PsychoHTTP/src/lib/time.s"
 
 # scom goes in bottom as its globally accessed
 .include "/home/f65/Documents/proj/PsychoHTTP/src/scom.s"

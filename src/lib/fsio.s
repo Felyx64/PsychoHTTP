@@ -19,7 +19,7 @@
   Write_File_Log:
     movl %eax, %esi                     # move the string ptr to the %esi string index register
     movl $2, %eax                       # move file code 2 server.log into %eax
-    movl $1024, %ebx                    # write flag O_APPEND so we are starting at end of file
+    movl $1025, %ebx                    # write flag O_APPEND | O_WRONLY so we are starting at end of file
     call Open_File_Stream               # open the read-file-stream
     cmpl $-1, %eax                      # check for error
     je .bad_log_write_error             # throw error if we found error
@@ -34,10 +34,10 @@
     inc %ecx                            # increment length ptr
     cmpl $1023, %ecx                    # check if we're not overruning scom
     je .end_of_log_write                # jump if we are
-    cmpb $'\0', %bl                     # check if we're at end of log ptr
+    cmpb $0x0, %bl                      # check if we're at end of log ptr
     jne .copy_to_write_data             # jump back if we're still copying
     .end_of_log_write:                  # end of loop label
-    movl $'\n', (%edi)                  # replace null with new line
+    dec %ecx                            # replace null with new line
 
     movl %eax, %ebx                     # move the server fd into param 1
     movl %ecx, %edx                     # move the length of string to write into param 3

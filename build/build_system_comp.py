@@ -63,7 +63,15 @@ class Comp_logic:
     self.error_code = 0
 
   def generate_other_files(self):
-    gen_cmd = subprocess.run(["touch", "./../out/config/filter.txt", "./../out/database.txt", "./../out/server.log"], capture_output=True)
+    gen_cmd = subprocess.run(
+      [
+        "touch",
+        "./../out/config/filter.txt",
+        "./../out/database.txt",
+        "./../out/server.log"
+      ],
+      capture_output=True
+    )
 
     if gen_cmd.returncode != 0:
       self.error_code = 1

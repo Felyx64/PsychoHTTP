@@ -1,85 +1,35 @@
-.section .bss
-  LoggerMemory:
-    .space 4096
-
-  LogEventCode:
-    .long 0
-
-  LogEventTypeID:
-    .long 0
-
-  FutexTimeout:
-    .long 2
-    .long 0
-
-.set CLONE_FLAGS, (0x00000100 | 17)
-.set FUTEX_FLAGS, (FUTEX_WAIT | FUTEX_PRIVATE_FLAG)
-
+# PARAM (EAX) event type id
+# PARAM (EBX) event paremeter 1
+# DESCRIPTION: logs a certain server event to the console
 .section .text
-  Initialize_Server_Logger:
-    movl $120, %eax                         # move the syscall sys_clone code into %eax
-    movl $CLONE_FLAGS, %ebx                 # move the syscall flags in second param %ebx
-    movl $LoggerMemory, %ecx                # give our logging thread some stack memory
-    addl $4096, %ecx                        # move the stack pointer back to the end
-    int $0x80                               # create new thread with syscall
-    cmpl $0, %eax                           # do some checking so that main thread can get out of the way of the 2nd thread's business
-    jne  .initializtion_done                # jump out of the function if we are the main thread
-    .start_logger_thread:                   # 2nd thread starts here
-
-    # logger operates here as an event driven engine
-    # so events are handled and checked for in this loop
-
-    movl $240, %eax                         # move event code 240 to %eax for syscall sys_futex
-    movl $LogEventCode, %ebx                # move event code into 2nd param
-    movl $FUTEX_FLAGS, %ecx                 # move the flags into param 3
-    movl $0, %edx                           # move 0 into %edx so we only wait till its not 0
-    movl $FutexTimeout, %esi                # move the the timeout params into param 5
-    movl $0, %edi                           # make param 6 empty
-    movl $0, %ebp                           # make param 7 empty
-    int $0x80                               # trigger syscall sys_futex
-
-    cmpl $0, %eax                           # check event was triggered
-    je .event_triggered                     # jump if it was
-
-
-    jmp .start_logger_thread                # jump back if no event found
-    .event_triggered:                       # label if even is triggered
-
-    #? dev
-    movl $1, %eax
-    movl $9, %ebx
-    int $0x80
-
-    movl $LogEventCode, %eax                # initialize shared main-log thread event memory
-    jmp *log_action_table(,(%eax),4)        # switch over the value stored in %eax to check if we need to log something
-
+  Log_Message:
+    jmp *log_action_table(,%eax,4)          # switch over the value stored in %eax to check if we need to log something
     log_action_table:                       # table of functions which we can jump to once the event listiner gets woken up
       .long invallid_log
       .long log_request                     # log format `Request: HOST_IP - - [DATE:TIME] "METHOD ROUTE (USER_AGENT)" \n`
       .long log_database                    # log format `Database: ACTION - - AMOUNT bytes \n`
       .long log_server_event                # log format `Server: EVENT - - MESSAGE \n`
-      .long log_disable                     # ends the logging all togheter
 
     invallid_log:
       # do nothing
-      jmp .start_logger_thread
+      jmp .logging_done
 
     log_request:
       # log format `Request: HOST_IP - - [DATE:TIME] "METHOD ROUTE (USER_AGENT)" \n`
-      #? MAY REPLACE WITH PUSHB operation
+      #? MAY REPLACE WITH pushw operation
 
       # we need \0 so we can search for the begin of the string
       # Write to stack '\0Request: '
-      pushb $'\0'
-      pushb $'R'
-      pushb $'e'
-      pushb $'q'
-      pushb $'u'
-      pushb $'e'
-      pushb $'s'
-      pushb $'t'
-      pushb $':'
-      pushb $' '
+      pushw $'\0'
+      pushw $'R'
+      pushw $'e'
+      pushw $'q'
+      pushw $'u'
+      pushw $'e'
+      pushw $'s'
+      pushw $'t'
+      pushw $':'
+      pushw $' '
 
       leal Request_Host_Header, %eax          # Create pointer to the first string we are searching for
       leal SCOM_User_Server_Request, %ebx     # Create pointer to the text we are searching in
@@ -90,27 +40,27 @@
       je .invallid_ip_proc                    # if not we say the host was invallid
       .valid_str_loop:                        # loop writes the ip to the log if we did find something
       inc %ebx                                # increment the ip so we are looking at the ip and other vals
-      pushb (%ebx)                            # push ip diget to stack
+      pushw (%ebx)                            # push ip diget to stack
       cmpl $'\n', (%ebx)                      # check if we are end of string
       je .ip_assign_loop_done                 # jump to the assign loop end if we are at the end of the ip
       jne .valid_str_loop                     # go back to begin of loop if we are not at the ip end
       .invallid_ip_proc:
       # Write to stack 'Bad_Ip: ' if we did not get a valid ip
-      pushb $'B'
-      pushb $'a'
-      pushb $'d'
-      pushb $'_'
-      pushb $'I'
-      pushb $'P'
+      pushw $'B'
+      pushw $'a'
+      pushw $'d'
+      pushw $'_'
+      pushw $'I'
+      pushw $'P'
       .ip_assign_loop_done:
 
       # assign to stack " - - ["
-      pushb $' '
-      pushb $'-'
-      pushb $' '
-      pushb $'-'
-      pushb $' '
-      pushb $'['
+      pushw $' '
+      pushw $'-'
+      pushw $' '
+      pushw $'-'
+      pushw $' '
+      pushw $'['
 
       call get_unix_sec                       # get the current unix time
 
@@ -119,82 +69,79 @@
       leal SCOM_IntStr_Convert_Results, %edi  # link the string copy result buffer to %edi
       call IntToString                        # convert the resulted year to a string
       popl %ebx                               # remove the unix time from the stack to prevent corruption
-      pushb 0(%edi)                           # push the year-str to the stack
-      pushb 1(%edi)                           # push the year-str to the stack
-      pushb 2(%edi)                           # push the year-str to the stack
-      pushb 3(%edi)                           # push the year-str to the stack
+      pushw 0(%edi)                           # push the year-str to the stack
+      pushw 1(%edi)                           # push the year-str to the stack
+      pushw 2(%edi)                           # push the year-str to the stack
+      pushw 3(%edi)                           # push the year-str to the stack
       movl %edi, %eax                         # move the resulted buffer to %eax
       call Clear_SCOM                         # clear the resulted buffer
       movl %ebx, %eax                         # move the unix time back to the %eax to continue
 
-      pushb $'-'                              # push log seperator to the stack
+      pushw $'-'                              # push log seperator to the stack
 
       pushl %eax                              # temp copy unix time to stack
       call get_current_month                  # get the current month
       leal SCOM_IntStr_Convert_Results, %edi  # link the string copy result buffer to %edi
       call IntToString                        # convert the resulted month to a string
       popl %ecx                               # remove the unix time from the stack to prevent corruption
-      pushb 0(%edi)                           # push the first non-corrupt diget to the stack
-      movl %esp, %ebx                         # backup the current stack-pointer to %ebx
-      dec %esp                                # create space for the new potential stack pointer location
+      pushw 0(%edi)                           # push the first non-corrupt diget to the stack
       cmpl $0, 1(%edi)                        # check if next char is end of month-str
-      cmovnel 1(%edi), (%esp)                 # if yes: move move char into the stack
-      cmovel %ebx, %esp                       # if no: reset the stack pointer to its previous state
+      je .no_second_month_diget               # jump if not second diget
+      pushw 1(%edi)                           # if yes: push char into the stack
+      .no_second_month_diget:                 # label to jump to if there is no second diget
       movl %edi, %eax                         # move the resulted buffer to %eax
       call Clear_SCOM                         # clear the resulted buffer
       movl %ecx, %eax                         # move the unix time back to the %eax to continue
 
-      pushb $'-'                              # push log seperator to the stack
+      pushw $'-'                              # push log seperator to the stack
 
       pushl %eax                              # temp copy unix time to stack
       call get_current_day                    # get the current day
       leal SCOM_IntStr_Convert_Results, %edi  # link the string copy result buffer to %edi
       call IntToString                        # convert the resulted day to a string
       popl %ecx                               # remove the unix time from the stack to prevent corruption
-      pushb 0(%edi)                           # push the first non-corrupt diget to the stack
-      movl %esp, %ebx                         # backup the current stack-pointer to %ebx
-      dec %esp                                # create space for the new potential stack pointer location
+      pushw 0(%edi)                           # push the first non-corrupt diget to the stack
       cmpl $0, 1(%edi)                        # check if next char is end of month-str
-      cmovnel 1(%edi), (%esp)                 # if yes: move move char into the stack
-      cmovel %ebx, %esp                       # if no: reset the stack pointer to its previous state
+      je .no_second_day_diget                 # jump if not second diget
+      pushw 1(%edi)                           # if yes: push char into the stack
+      .no_second_day_diget:                   # label to jump to if there is no second diget
       movl %edi, %eax                         # move the resulted buffer to %eax
       call Clear_SCOM                         # clear the resulted buffer
       movl %ecx, %eax                         # move the unix time back to the %eax to continue
 
-      pushb $' '                              # push log seperator to the stack
+      pushw $' '                              # push log seperator to the stack
 
       pushl %eax                              # temp copy unix time to stack
       call get_current_hour                   # get the current hour
       leal SCOM_IntStr_Convert_Results, %edi  # link the string copy result buffer to %edi
       call IntToString                        # convert the resulted day to a string
       popl %ecx                               # remove the unix time from the stack to prevent corruption
-      pushb 0(%edi)                           # push the first non-corrupt diget to the stack
-      movl %esp, %ebx                         # backup the current stack-pointer to %ebx
-      dec %esp                                # create space for the new potential stack pointer location
+      pushw 0(%edi)                           # push the first non-corrupt diget to the stack
       cmpl $0, 1(%edi)                        # check if next char is end of month-str
-      cmovnel 1(%edi), (%esp)                 # if yes: move move char into the stack
-      cmovel %ebx, %esp                       # if no: reset the stack pointer to its previous state
+      je .no_second_hour_diget                # jump if not second diget
+      pushw 1(%edi)                           # if yes: push char into the stack
+      .no_second_hour_diget:                  # label to jump to if there is no second diget
       movl %edi, %eax                         # move the resulted buffer to %eax
       call Clear_SCOM                         # clear the resulted buffer
       movl %ecx, %eax                         # move the unix time back to the %eax to continue
 
-      pushb $':'                              # push log seperator to the stack
+      pushw $':'                              # push log seperator to the stack
 
       call get_current_minute                 # get the current minute
       leal SCOM_IntStr_Convert_Results, %edi  # link the string copy result buffer to %edi
       call IntToString                        # convert the resulted day to a string
-      pushb 0(%edi)                           # push the first non-corrupt diget to the stack
-      movl %esp, %ebx                         # backup the current stack-pointer to %ebx
-      dec %esp                                # create space for the new potential stack pointer location
+      pushw 0(%edi)                           # push the first non-corrupt diget to the stack
       cmpl $0, 1(%edi)                        # check if next char is end of month-str
-      cmovnel 1(%edi), (%esp)                 # if yes: move move char into the stack
+      je .no_second_minute_diget              # jump if not second diget
+      pushw 1(%edi)                           # if yes: push char into the stack
+      .no_second_minute_diget:                # label to jump to if there is no second diget
       cmovel %ebx, %esp                       # if no: reset the stack pointer to its previous state
       movl %edi, %eax                         # move the resulted buffer to %eax
       call Clear_SCOM                         # clear the resulted buffer
 
       # push log seperators to the stack
-      pushb $']'
-      pushb $' '
+      pushw $']'
+      pushw $' '
 
       leal SCOM_User_Server_Request, %edi     # move the request string into edi
       movl 1(%edi), %eax                      # get the first char of the request body because it holds the method
@@ -204,41 +151,41 @@
       je .write_post_to_log                   # go to the write post method to the log if we found it
 
       # write ??? which means it was a unrocognized or disallowed request
-      pushb $'?'
-      pushb $'?'
-      pushb $'?'
+      pushw $'?'
+      pushw $'?'
+      pushw $'?'
 
       jmp .end_of_method_write                # jump over the other log writes so no corruption happens
       .write_get_to_log:                      # start of write GET procedure
 
       # write GET if its a get request
-      pushb $'G'
-      pushb $'E'
-      pushb $'T'
+      pushw $'G'
+      pushw $'E'
+      pushw $'T'
 
       jmp .end_of_method_write                # jump over the other log writes so no corruption happens
       .write_post_to_log:                     # start of write POST procedure
 
       # write POST if its a post request
-      pushb $'P'
-      pushb $'O'
-      pushb $'S'
-      pushb $'T'
+      pushw $'P'
+      pushw $'O'
+      pushw $'S'
+      pushw $'T'
 
       .end_of_method_write:                   # end of write method logic is here
-      pushb $' '                              # move a seperator to the log
+      pushw $' '                              # move a seperator to the log
 
       .search_route_loop:                     # start loop to search for the beginning of the route
       inc %edi                                # increment the pointer to keep searching
       cmpl $'/', (%edi)                       # check if we found the route
       jne .search_route_loop                  # if we still not on the route we jump back
       .insert_to_log_loop:                    # start of write route loop
-      pushb (%edi)                            # write the route to the stack
+      pushw (%edi)                            # write the route to the stack
       inc %edi                                # increment the pointer
       cmpl $' ', (%edi)                       # check if we hit the end of the route
       jne .insert_to_log_loop                 # jump back if not
 
-      pushb $' '                              # add log seperator
+      pushw $' '                              # add log seperator
 
       # start searching for the user-agent
       leal Request_User_Agent_Header, %eax    # Create pointer to the first string we are searching for
@@ -248,7 +195,7 @@
 
       movl %ebx, %edi                         # move the found string to the string get register
       .not_found_end_of_ua:                   # start of get user-agent loop
-      pushb (%edi)                            # push user agent char to the stack
+      pushw (%edi)                            # push user agent char to the stack
       inc %edi                                # increment the pointer looking at the user agent
       cmpl $'\n', (%edi)                      # check if we are at the end of the string
       jne .not_found_end_of_ua                # jump back to begin of loop if not at end of user-agent get loop
@@ -261,6 +208,7 @@
       jne .search_start_of_log                # jump back if we have not hit the start of the string
       inc %edi                                # increment the pointer again so we are not looking at the start null to not confuse the incoming log
 
+      #? POSSIBLE BAD LOG DUE TO PUSHW
       movl %edi, %eax                         # move the pointer to %eax so we can start logging to the console
       call nstandard_console_write            # log the request log to the console
 
@@ -276,21 +224,20 @@
 
     log_database:
       # log format `Database: ACTION - - AMOUNT bytes \n`
-      #? MAY REPLACE WITH PUSHB operation
-      pushb $'\0'
-      pushb $'D'
-      pushb $'a'
-      pushb $'t'
-      pushb $'a'
-      pushb $'b'
-      pushb $'a'
-      pushb $'s'
-      pushb $'e'
-      pushb $':'
-      pushb $' '
+      #? MAY REPLACE WITH pushw operation
+      pushw $'\0'
+      pushw $'D'
+      pushw $'a'
+      pushw $'t'
+      pushw $'a'
+      pushw $'b'
+      pushw $'a'
+      pushw $'s'
+      pushw $'e'
+      pushw $':'
+      pushw $' '
 
-      movl $LogEventTypeID, %eax
-      jmp *database_action_log_table(,(%eax),4)
+      jmp *database_action_log_table(,%ebx,4)
 
       database_action_log_table:
         .long invallid_databaselog    # (0) log: database is invallid
@@ -299,24 +246,24 @@
 
       invallid_databaselog:
         # log message that database log is invallid
-        pushb $'I'
-        pushb $'N'
-        pushb $'V'
-        pushb $'A'
-        pushb $'L'
-        pushb $'\n'
+        pushw $'I'
+        pushw $'N'
+        pushw $'V'
+        pushw $'A'
+        pushw $'L'
+        pushw $'\n'
 
         call nstandard_console_write
         call Write_File_Log
         jmp .logged_svr_msg
       write_databaselog:
         # log if we are writing
-        pushb $'W'
-        pushb $'R'
-        pushb $'I'
-        pushb $'T'
-        pushb $'E'
-        pushb $' '
+        pushw $'W'
+        pushw $'R'
+        pushw $'I'
+        pushw $'T'
+        pushw $'E'
+        pushw $' '
 
         #? DO LATER GRAB FROM SCOM MEMORY
 
@@ -325,11 +272,11 @@
         jmp .logged_svr_msg
       read_databaselog:
         # log if we are reading
-        pushb $'R'
-        pushb $'E'
-        pushb $'A'
-        pushb $'D'
-        pushb $' '
+        pushw $'R'
+        pushw $'E'
+        pushw $'A'
+        pushw $'D'
+        pushw $' '
 
         #? DO LATER GRAB FROM SCOM MEMORY
 
@@ -337,19 +284,12 @@
         call Write_File_Log
         jmp .logged_svr_msg
 
-
-      movl $0, %eax                           # move 0 into %eax
-      leal LogEventCode, %ebx                 # link the event code shared memory with %ebx
-      movl %eax, (%ebx)                       # move 0 back into the event code memory to reset the logger
-      leal LogEventTypeID, %ebx               # link the second event code shared memory with %ebx
-      movl %eax, (%ebx)                       # move 0 back into the second event code memory to reset the logger
-      jmp .start_logger_thread
+      jmp .logging_done
 
     log_server_event:
       # log format `Server: EVENT - - MESSAGE \n`
 
-      movl $LogEventTypeID, %eax              # grab the log event id and store it in %eax
-      jmp *server_log_action_table(,(%eax),4) # jump to the location the id is pointing at
+      jmp *server_log_action_table(,%ebx,4)   # jump to the location the id is pointing at
 
       server_log_action_table:                # table of functions which we can jump to once we need to do server log
         .long invallid_serverlog              # (0) log:  Server: Error - - Bad lgid detected. Bailout reccomended! (0x0)
@@ -375,132 +315,133 @@
           # Server: Error - - Bad lgid detected. Bailout reccomended! (0x0)
           movl $Log_Server_Status_BADLGID_ERR, %eax
           call nstandard_console_write
+          movl $Log_Server_Status_BADLGID_ERR, %eax
           call Write_File_Log
           jmp .logged_svr_msg
         init_servermsg:
           # Server: Info - - Initializing server
           movl $Log_Server_Status_Initializing, %eax
           call nstandard_console_write
+          movl $Log_Server_Status_Initializing, %eax
           call Write_File_Log
           jmp .logged_svr_msg
         socket_createdmsg:
           # Server: Info - - Socket has been created
           movl $Log_Server_Status_Created_System_Socket, %eax
           call nstandard_console_write
+          movl $Log_Server_Status_Created_System_Socket, %eax
           call Write_File_Log
           jmp .logged_svr_msg
         socket_configmsg:
           # Server: Info - - Socket has been configured
           movl $Log_Server_Status_Configured_System_Socket, %eax
           call nstandard_console_write
+          movl $Log_Server_Status_Configured_System_Socket, %eax
           call Write_File_Log
           jmp .logged_svr_msg
         socket_initmsg:
           # Server: Info - - Socket has been Initialized...
           movl $Log_Server_Status_Initialized_server_socket, %eax
           call nstandard_console_write
+          movl $Log_Server_Status_Initialized_server_socket, %eax
           call Write_File_Log
           jmp .logged_svr_msg
         socket_listeningmsg:
           # Server: Info - - Socket now listening onto port 7870
           movl $Log_Server_Status_now_listening, %eax
           call nstandard_console_write
+          movl $Log_Server_Status_now_listening, %eax
           call Write_File_Log
           jmp .logged_svr_msg
         database_connectingdbmsg:
           # Server: Info - - Database is currently connecting
           movl $Log_Server_Status_database_connecting, %eax
           call nstandard_console_write
+          movl $Log_Server_Status_database_connecting, %eax
           call Write_File_Log
           jmp .logged_svr_msg
         database_connectedmsg:
           # Server: Info - - Database is now connected!
           movl $Log_Server_Status_database_Connected, %eax
           call nstandard_console_write
+          movl $Log_Server_Status_database_Connected, %eax
           call Write_File_Log
           jmp .logged_svr_msg
         database_disconnected:
           # Server: Info - - Database has been disconnected
           movl $Log_Server_Status_database_disconnected, %eax
           call nstandard_console_write
+          movl $Log_Server_Status_database_disconnected, %eax
           call Write_File_Log
           jmp .logged_svr_msg
         logger_has_been_initialized:
           # Server: Info - - Logger has been Initialized
           movl $Log_Server_Status_logger_initialized, %eax
           call nstandard_console_write
+          movl $Log_Server_Status_logger_initialized, %eax
           call Write_File_Log
           jmp .logged_svr_msg
         server_standard_exit:
           # Server: Info - - Server is currently shutting down..
           movl $Log_Serrver_Status_Shutdown, %eax
           call nstandard_console_write
+          movl $Log_Serrver_Status_Shutdown, %eax
           call Write_File_Log
           jmp .logged_svr_msg
         server_bailout_sockererr:
           # Server: Error - - Bad socket creation. Exiting server.
           movl $Log_Serrver_Status_Err_BadSock, %eax
           call nstandard_console_write
+          movl $Log_Serrver_Status_Err_BadSock, %eax
           call Write_File_Log
           jmp .logged_svr_msg
         server_bailout_sockconferr:
           # Server: Error - - Bad config. Exiting Server.
           movl $Log_Serrver_Status_Err_BadConf, %eax
           call nstandard_console_write
+          movl $Log_Serrver_Status_Err_BadConf, %eax
           call Write_File_Log
           jmp .logged_svr_msg
         server_bailout_sockiniterr:
           # Server: Error - - Bad socket initialization. Exiting..
           movl $Log_Serrver_Status_Err_BadInit, %eax
           call nstandard_console_write
+          movl $Log_Serrver_Status_Err_BadInit, %eax
           call Write_File_Log
           jmp .logged_svr_msg
         server_bailout_badsvr:
           # Server: Error - - Bad server or listener. Exiting..
           movl $Log_Serrver_Status_Err_BadList, %eax
           call nstandard_console_write
+          movl $Log_Serrver_Status_Err_BadList, %eax
           call Write_File_Log
           jmp .logged_svr_msg
         server_bailout_bad_generic:
           # Server: Error - - Bad or inval init. Exiting...
           movl $Log_Serrver_Status_Err_BadSvrInit, %eax
           call nstandard_console_write
+          movl $Log_Serrver_Status_Err_BadSvrInit, %eax
           call Write_File_Log
           jmp .logged_svr_msg
         server_bailout_bailout:
           # Server: Error - - Uncat Error Flagged. Exiting..
           movl $Log_Serrver_Status_Err_Unkown_Error, %eax
           call nstandard_console_write
+          movl $Log_Serrver_Status_Err_Unkown_Error, %eax
           call Write_File_Log
           jmp .logged_svr_msg
         server_developer_exit:
           # Server: Error - - Devexitt
           movl $Log_Serrver_Status_Err_Developer_Exit, %eax
           call nstandard_console_write
+          movl $Log_Serrver_Status_Err_Developer_Exit, %eax
           call Write_File_Log
           jmp .logged_svr_msg
 
       .logged_svr_msg:                        # universal endpoint for all logged messages
+      jmp .logging_done
 
-      movl $0, %eax                           # move 0 into %eax
-      leal LogEventCode, %ebx                 # link the event code shared memory with %ebx
-      movl %eax, (%ebx)                       # move 0 back into the event code memory to reset the logger
-      leal LogEventTypeID, %ebx               # link the second event code shared memory with %ebx
-      movl %eax, (%ebx)                       # move 0 back into the second event code memory to reset the logger
-      jmp .start_logger_thread
-
-    log_disable:
-      # Server: Info - - Logger has been Disabled
-      movl $Log_Server_Status_Logger_Disabled, %eax
-      call nstandard_console_write
-      call Write_File_Log
-
-      # kill the thread
-      movl $1, %eax                              # move 1 into %EAX to call syscall (exit)
-      movl $78, %ebx                             # exit with code 78 instead of 1 for debug purposes (thread_exit)
-      int $0x80                                  # trigger (exit) syscall itself
-
-    .initializtion_done:
+    .logging_done:
     ret
 
 
@@ -537,18 +478,18 @@
   Log_Server_Status_Logger_Disabled:
     .asciz "Server: Info - - Logger has been Disabled \n"
   Log_Serrver_Status_Shutdown:
-    .asciz "Server: Info - - Server is currently shutting down.."
+    .asciz "Server: Info - - Server is currently shutting down.. \n"
   Log_Serrver_Status_Err_BadSock:
-    .asciz "Server: Error - - Bad socket creation. Exiting server."
+    .asciz "Server: Error - - Bad socket creation. Exiting server. \n"
   Log_Serrver_Status_Err_BadConf:
-    .asciz "Server: Error - - Bad config. Exiting Server."
+    .asciz "Server: Error - - Bad config. Exiting Server. \n"
   Log_Serrver_Status_Err_BadInit:
-    .asciz "Server: Error - - Bad socket initialization. Exiting.."
+    .asciz "Server: Error - - Bad socket initialization. Exiting.. \n"
   Log_Serrver_Status_Err_BadList:
-    .asciz "Server: Error - - Bad server or listener. Exiting.."
+    .asciz "Server: Error - - Bad server or listener. Exiting.. \n"
   Log_Serrver_Status_Err_BadSvrInit:
-    .asciz "Server: Error - - Bad or inval init. Exiting..."
+    .asciz "Server: Error - - Bad or inval init. Exiting... \n"
   Log_Serrver_Status_Err_Unkown_Error:
-    .asciz "Server: Error - - Uncat Error Flagged. Exiting.."
+    .asciz "Server: Error - - Uncat Error Flagged. Exiting.. \n"
   Log_Serrver_Status_Err_Developer_Exit:
-    .asciz "Server: Error - - Devexitt"
+    .asciz "Server: Error - - Devexitt \n"

@@ -131,7 +131,7 @@
     movb %dl, -1(%edi,%ecx)       # push the what's now the converted char into the string
     incl %ecx                     # increment the counter
     testl %eax, %eax              # now we will check the result we got
-    jnz .convert_loop             # if the result was 0 we are at the end of the loop
+    jnz .int_str_convert_loop     # if the result was 0 we are at the end of the loop
     movb $0, (%edi,%ecx)          # move the null teminator into the string to end it off
     leal -1(%edi,%ecx), %esi      # get last number of string back into %esi as temp as we need to reverse it now
     leal (%edi), %edi             # create a link to the first number in the string to %edi
