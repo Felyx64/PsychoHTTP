@@ -141,6 +141,9 @@
 
     call Analyze_Request                      # call a function that analyses what the host is asking
 
+    movl $1, %eax                             # move the id into the 1st log param
+    call Log_Message                          # trigger the logger
+
     popl %ebx                                 # move connection fd into the %ebx second param
 
     cmpl $1, %eax                             # compare if the route getter return 1 meaning its not a valid request

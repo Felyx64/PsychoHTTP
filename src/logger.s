@@ -1,3 +1,7 @@
+.section .bss
+  StringLogMemory:
+    .space 1024
+
 # PARAM (EAX) event type id
 # PARAM (EBX) event paremeter 1
 # DESCRIPTION: logs a certain server event to the console
@@ -16,176 +20,225 @@
 
     log_request:
       # log format `Request: HOST_IP - - [DATE:TIME] "METHOD ROUTE (USER_AGENT)" \n`
-      #? MAY REPLACE WITH pushw operation
 
-      # we need \0 so we can search for the begin of the string
-      # Write to stack '\0Request: '
-      pushw $'\0'
-      pushw $'R'
-      pushw $'e'
-      pushw $'q'
-      pushw $'u'
-      pushw $'e'
-      pushw $'s'
-      pushw $'t'
-      pushw $':'
-      pushw $' '
+      leal StringLogMemory, %edi
 
+      # Write to logstack 'Request: '
+      movb $'R', (%edi)
+      inc %edi
+      movb $'e', (%edi)
+      inc %edi
+      movb $'q', (%edi)
+      inc %edi
+      movb $'u', (%edi)
+      inc %edi
+      movb $'e', (%edi)
+      inc %edi
+      movb $'s', (%edi)
+      inc %edi
+      movb $'t', (%edi)
+      inc %edi
+      movb $':', (%edi)
+      inc %edi
+      movb $' ', (%edi)
+      inc %edi
+
+      pushl %edi                              # temp backup log-stackptr
       leal Request_Host_Header, %eax          # Create pointer to the first string we are searching for
       leal SCOM_User_Server_Request, %ebx     # Create pointer to the text we are searching in
       movl $6, %ecx                           # length of word we are searching for
       call String_Search_Word                 # search for word
+      popl %edi                               # bring back log-stackptr
 
       cmpl $0, %eax                           # check if we did find the Host ip
       je .invallid_ip_proc                    # if not we say the host was invallid
-      .valid_str_loop:                        # loop writes the ip to the log if we did find something
       inc %ebx                                # increment the ip so we are looking at the ip and other vals
-      pushw (%ebx)                            # push ip diget to stack
-      cmpl $'\n', (%ebx)                      # check if we are end of string
-      je .ip_assign_loop_done                 # jump to the assign loop end if we are at the end of the ip
-      jne .valid_str_loop                     # go back to begin of loop if we are not at the ip end
+      .valid_str_loop:                        # loop writes the ip to the log if we did find something
+      movb (%ebx), %al
+      cmpb $10, %al
+      je .ip_assign_loop_done
+      cmpb $13, %al
+      je .ip_assign_loop_done
+      movb %al, (%edi)
+      inc %edi
+      inc %ebx
+      jmp .valid_str_loop                     # go back to begin of loop if we are not at the ip end
       .invallid_ip_proc:
       # Write to stack 'Bad_Ip: ' if we did not get a valid ip
-      pushw $'B'
-      pushw $'a'
-      pushw $'d'
-      pushw $'_'
-      pushw $'I'
-      pushw $'P'
+      movb $'B', (%edi)
+      inc %edi
+      movb $'a', (%edi)
+      inc %edi
+      movb $'d', (%edi)
+      inc %edi
+      movb $'_', (%edi)
+      inc %edi
+      movb $'I', (%edi)
+      inc %edi
+      movb $'P', (%edi)
+      inc %edi
       .ip_assign_loop_done:
 
       # assign to stack " - - ["
-      pushw $' '
-      pushw $'-'
-      pushw $' '
-      pushw $'-'
-      pushw $' '
-      pushw $'['
+      movb $' ', (%edi)
+      inc %edi
+      movb $'-', (%edi)
+      inc %edi
+      movb $' ', (%edi)
+      inc %edi
+      movb $'-', (%edi)
+      inc %edi
+      movb $' ', (%edi)
+      inc %edi
+      movb $'[', (%edi)
+      inc %edi
 
-      call get_unix_sec                       # get the current unix time
+      #call get_unix_sec                       # get the current unix time
 
-      pushl %eax                              # temp copy unix time to stack
-      call get_current_year                   # get the current year
-      leal SCOM_IntStr_Convert_Results, %edi  # link the string copy result buffer to %edi
-      call IntToString                        # convert the resulted year to a string
-      popl %ebx                               # remove the unix time from the stack to prevent corruption
-      pushw 0(%edi)                           # push the year-str to the stack
-      pushw 1(%edi)                           # push the year-str to the stack
-      pushw 2(%edi)                           # push the year-str to the stack
-      pushw 3(%edi)                           # push the year-str to the stack
-      movl %edi, %eax                         # move the resulted buffer to %eax
-      call Clear_SCOM                         # clear the resulted buffer
-      movl %ebx, %eax                         # move the unix time back to the %eax to continue
+      #pushl %eax                              # temp copy unix time to stack
+      #call get_current_year                   # get the current year
+      #leal SCOM_IntStr_Convert_Results, %edi  # link the string copy result buffer to %edi
+      #call IntToString                        # convert the resulted year to a string
+      #popl %ebx                               # remove the unix time from the stack to prevent corruption
+      #pushw 0(%edi)                           # push the year-str to the stack
+      #pushw 1(%edi)                           # push the year-str to the stack
+      #pushw 2(%edi)                           # push the year-str to the stack
+      #pushw 3(%edi)                           # push the year-str to the stack
+      #movl %edi, %eax                         # move the resulted buffer to %eax
+      #call Clear_SCOM                         # clear the resulted buffer
+      #movl %ebx, %eax                         # move the unix time back to the %eax to continue
 
-      pushw $'-'                              # push log seperator to the stack
+      #pushw $'-'                              # push log seperator to the stack
 
-      pushl %eax                              # temp copy unix time to stack
-      call get_current_month                  # get the current month
-      leal SCOM_IntStr_Convert_Results, %edi  # link the string copy result buffer to %edi
-      call IntToString                        # convert the resulted month to a string
-      popl %ecx                               # remove the unix time from the stack to prevent corruption
-      pushw 0(%edi)                           # push the first non-corrupt diget to the stack
-      cmpl $0, 1(%edi)                        # check if next char is end of month-str
-      je .no_second_month_diget               # jump if not second diget
-      pushw 1(%edi)                           # if yes: push char into the stack
-      .no_second_month_diget:                 # label to jump to if there is no second diget
-      movl %edi, %eax                         # move the resulted buffer to %eax
-      call Clear_SCOM                         # clear the resulted buffer
-      movl %ecx, %eax                         # move the unix time back to the %eax to continue
+      #pushl %eax                              # temp copy unix time to stack
+      #call get_current_month                  # get the current month
+      #leal SCOM_IntStr_Convert_Results, %edi  # link the string copy result buffer to %edi
+      #call IntToString                        # convert the resulted month to a string
+      #popl %ecx                               # remove the unix time from the stack to prevent corruption
+      #pushw 0(%edi)                           # push the first non-corrupt diget to the stack
+      #cmpl $0, 1(%edi)                        # check if next char is end of month-str
+      #je .no_second_month_diget               # jump if not second diget
+      #pushw 1(%edi)                           # if yes: push char into the stack
+      #.no_second_month_diget:                 # label to jump to if there is no second diget
+      #movl %edi, %eax                         # move the resulted buffer to %eax
+      #call Clear_SCOM                         # clear the resulted buffer
+      #movl %ecx, %eax                         # move the unix time back to the %eax to continue
 
-      pushw $'-'                              # push log seperator to the stack
+      #pushw $'-'                              # push log seperator to the stack
 
-      pushl %eax                              # temp copy unix time to stack
-      call get_current_day                    # get the current day
-      leal SCOM_IntStr_Convert_Results, %edi  # link the string copy result buffer to %edi
-      call IntToString                        # convert the resulted day to a string
-      popl %ecx                               # remove the unix time from the stack to prevent corruption
-      pushw 0(%edi)                           # push the first non-corrupt diget to the stack
-      cmpl $0, 1(%edi)                        # check if next char is end of month-str
-      je .no_second_day_diget                 # jump if not second diget
-      pushw 1(%edi)                           # if yes: push char into the stack
-      .no_second_day_diget:                   # label to jump to if there is no second diget
-      movl %edi, %eax                         # move the resulted buffer to %eax
-      call Clear_SCOM                         # clear the resulted buffer
-      movl %ecx, %eax                         # move the unix time back to the %eax to continue
+      #pushl %eax                              # temp copy unix time to stack
+      #call get_current_day                    # get the current day
+      #leal SCOM_IntStr_Convert_Results, %edi  # link the string copy result buffer to %edi
+      #call IntToString                        # convert the resulted day to a string
+      #popl %ecx                               # remove the unix time from the stack to prevent corruption
+      #pushw 0(%edi)                           # push the first non-corrupt diget to the stack
+      #cmpl $0, 1(%edi)                        # check if next char is end of month-str
+      #je .no_second_day_diget                 # jump if not second diget
+      #pushw 1(%edi)                           # if yes: push char into the stack
+      #.no_second_day_diget:                   # label to jump to if there is no second diget
+      #movl %edi, %eax                         # move the resulted buffer to %eax
+      #call Clear_SCOM                         # clear the resulted buffer
+      #movl %ecx, %eax                         # move the unix time back to the %eax to continue
 
-      pushw $' '                              # push log seperator to the stack
+      #pushw $' '                              # push log seperator to the stack
 
-      pushl %eax                              # temp copy unix time to stack
-      call get_current_hour                   # get the current hour
-      leal SCOM_IntStr_Convert_Results, %edi  # link the string copy result buffer to %edi
-      call IntToString                        # convert the resulted day to a string
-      popl %ecx                               # remove the unix time from the stack to prevent corruption
-      pushw 0(%edi)                           # push the first non-corrupt diget to the stack
-      cmpl $0, 1(%edi)                        # check if next char is end of month-str
-      je .no_second_hour_diget                # jump if not second diget
-      pushw 1(%edi)                           # if yes: push char into the stack
-      .no_second_hour_diget:                  # label to jump to if there is no second diget
-      movl %edi, %eax                         # move the resulted buffer to %eax
-      call Clear_SCOM                         # clear the resulted buffer
-      movl %ecx, %eax                         # move the unix time back to the %eax to continue
+      #pushl %eax                              # temp copy unix time to stack
+      #call get_current_hour                   # get the current hour
+      #leal SCOM_IntStr_Convert_Results, %edi  # link the string copy result buffer to %edi
+      #call IntToString                        # convert the resulted day to a string
+      #popl %ecx                               # remove the unix time from the stack to prevent corruption
+      #pushw 0(%edi)                           # push the first non-corrupt diget to the stack
+      #cmpl $0, 1(%edi)                        # check if next char is end of month-str
+      #je .no_second_hour_diget                # jump if not second diget
+      #pushw 1(%edi)                           # if yes: push char into the stack
+      #.no_second_hour_diget:                  # label to jump to if there is no second diget
+      #movl %edi, %eax                         # move the resulted buffer to %eax
+      #call Clear_SCOM                         # clear the resulted buffer
+      #movl %ecx, %eax                         # move the unix time back to the %eax to continue
 
-      pushw $':'                              # push log seperator to the stack
+      #pushw $':'                              # push log seperator to the stack
 
-      call get_current_minute                 # get the current minute
-      leal SCOM_IntStr_Convert_Results, %edi  # link the string copy result buffer to %edi
-      call IntToString                        # convert the resulted day to a string
-      pushw 0(%edi)                           # push the first non-corrupt diget to the stack
-      cmpl $0, 1(%edi)                        # check if next char is end of month-str
-      je .no_second_minute_diget              # jump if not second diget
-      pushw 1(%edi)                           # if yes: push char into the stack
-      .no_second_minute_diget:                # label to jump to if there is no second diget
-      cmovel %ebx, %esp                       # if no: reset the stack pointer to its previous state
-      movl %edi, %eax                         # move the resulted buffer to %eax
-      call Clear_SCOM                         # clear the resulted buffer
+      #call get_current_minute                 # get the current minute
+      #leal SCOM_IntStr_Convert_Results, %edi  # link the string copy result buffer to %edi
+      #call IntToString                        # convert the resulted day to a string
+      #pushw 0(%edi)                           # push the first non-corrupt diget to the stack
+      #cmpl $0, 1(%edi)                        # check if next char is end of month-str
+      #je .no_second_minute_diget              # jump if not second diget
+      #pushw 1(%edi)                           # if yes: push char into the stack
+      #.no_second_minute_diget:                # label to jump to if there is no second diget
+      #cmovel %ebx, %esp                       # if no: reset the stack pointer to its previous state
+      #movl %edi, %eax                         # move the resulted buffer to %eax
+      #call Clear_SCOM                         # clear the resulted buffer
 
       # push log seperators to the stack
-      pushw $']'
-      pushw $' '
+      movb $']', (%edi)
+      inc %edi
+      movb $' ', (%edi)
+      inc %edi
 
-      leal SCOM_User_Server_Request, %edi     # move the request string into edi
-      movl 1(%edi), %eax                      # get the first char of the request body because it holds the method
-      cmpl $'G', %eax                         # check if its G meaning GET request
+      leal SCOM_User_Server_Request, %ebx     # move the request string into edi
+      movb (%ebx), %al                        # move the first param of method into %al
+      cmpb $'G', %al                          # check if its G meaning GET request
       je .write_get_to_log                    # go to the write get method to log if we found it
-      cmpl $'P', %eax                         # check if its P meaning POST request
+      cmpb $'P', %al                          # check if its P meaning POST request
       je .write_post_to_log                   # go to the write post method to the log if we found it
 
       # write ??? which means it was a unrocognized or disallowed request
-      pushw $'?'
-      pushw $'?'
-      pushw $'?'
+      movb $'?', (%edi)
+      inc %edi
+      movb $'?', (%edi)
+      inc %edi
+      movb $'?', (%edi)
+      inc %edi
 
       jmp .end_of_method_write                # jump over the other log writes so no corruption happens
       .write_get_to_log:                      # start of write GET procedure
 
       # write GET if its a get request
-      pushw $'G'
-      pushw $'E'
-      pushw $'T'
+      movb $'G', (%edi)
+      inc %edi
+      movb $'E', (%edi)
+      inc %edi
+      movb $'T', (%edi)
+      inc %edi
 
       jmp .end_of_method_write                # jump over the other log writes so no corruption happens
       .write_post_to_log:                     # start of write POST procedure
 
       # write POST if its a post request
-      pushw $'P'
-      pushw $'O'
-      pushw $'S'
-      pushw $'T'
+      movb $'P', (%edi)
+      inc %edi
+      movb $'O', (%edi)
+      inc %edi
+      movb $'S', (%edi)
+      inc %edi
+      movb $'T', (%edi)
+      inc %edi
 
       .end_of_method_write:                   # end of write method logic is here
-      pushw $' '                              # move a seperator to the log
+
+      # move a seperator to the log
+      movb $' ', (%edi)
+      inc %edi
 
       .search_route_loop:                     # start loop to search for the beginning of the route
-      inc %edi                                # increment the pointer to keep searching
-      cmpl $'/', (%edi)                       # check if we found the route
+      inc %ebx                                # increment the pointer to keep searching
+      cmpb $'/', (%ebx)                       # check if we found the route
       jne .search_route_loop                  # if we still not on the route we jump back
       .insert_to_log_loop:                    # start of write route loop
-      pushw (%edi)                            # write the route to the stack
-      inc %edi                                # increment the pointer
-      cmpl $' ', (%edi)                       # check if we hit the end of the route
+      # write the route to the stack
+      movb (%ebx), %al
+      movb %al, (%edi)
+      inc %edi
+      inc %ebx                                # increment the pointer
+      cmpb $' ', (%ebx)                       # check if we hit the end of the route
       jne .insert_to_log_loop                 # jump back if not
 
-      pushw $' '                              # add log seperator
+      # add log seperator
+      movb $' ', (%edi)
+      inc %edi
+
+      pushl %edi
 
       # start searching for the user-agent
       leal Request_User_Agent_Header, %eax    # Create pointer to the first string we are searching for
@@ -193,32 +246,37 @@
       movl $12, %ecx                          # length of word we are searching for
       call String_Search_Word                 # search for word
 
-      movl %ebx, %edi                         # move the found string to the string get register
+      popl %edi
+
+      inc %ebx
       .not_found_end_of_ua:                   # start of get user-agent loop
-      pushw (%edi)                            # push user agent char to the stack
-      inc %edi                                # increment the pointer looking at the user agent
-      cmpl $'\n', (%edi)                      # check if we are at the end of the string
-      jne .not_found_end_of_ua                # jump back to begin of loop if not at end of user-agent get loop
+      movb (%ebx), %al
+      cmpb $10, %al
+      je .end_of_ua_getter_loop
+      cmpb $13, %al
+      je .end_of_ua_getter_loop
+      movb %al, (%edi)
+      inc %edi
+      inc %ebx
+      jmp .not_found_end_of_ua
+      .end_of_ua_getter_loop:
 
-      movl %esp, %edi                         # push stack pointer to %edi as we are now gonna string search the start of the log again as its done
-      addl $1, %edi                           # add 1 so we dont auto-complete the search with the null-termintor
-      .search_start_of_log:                   # start of search log begin loop
-      dec %edi                                # decrement the pointer
-      cmpl $0x0, (%edi)                       # see if we have found null which is also at the start of the string
-      jne .search_start_of_log                # jump back if we have not hit the start of the string
-      inc %edi                                # increment the pointer again so we are not looking at the start null to not confuse the incoming log
-
-      #? POSSIBLE BAD LOG DUE TO PUSHW
-      movl %edi, %eax                         # move the pointer to %eax so we can start logging to the console
+      # and terminate the string we made
+      movb $0x0, (%edi)
+      leal StringLogMemory, %eax
       call nstandard_console_write            # log the request log to the console
 
-      movl %edi, %eax                         # move the pointer to %eax so we can start logging to the logfile
-      pushl %edi                              # backup the pointer to the log as we need it to clear the stack
+      # write log to file
+      leal StringLogMemory, %eax              # move the pointer to %eax so we can start logging to the logfile
       call Write_File_Log                     # log the request to the log file
-      popl %eax                               # bring %edi back into %eax
 
-      subl $2, %eax                           # subtract 2 from %edi so we found the old adress of the stack pointer before we started the log
-      movl %edi, %esp                         # move the old stack adress so we have resetted the stack pointer
+      # clear the string we where logging
+      leal StringLogMemory, %eax
+      call Clear_SCOM
+
+      movl $1, %eax
+      movl $99, %ebx
+      int $0x80
 
       jmp .logged_svr_msg
 
