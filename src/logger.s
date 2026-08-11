@@ -2,6 +2,9 @@
   StringLogMemory:
     .space 1024
 
+  TimeMakerMemory:
+    .space 256
+
 # PARAM (EAX) event type id
 # PARAM (EBX) event paremeter 1
 # DESCRIPTION: logs a certain server event to the console
@@ -93,7 +96,26 @@
       movb $'[', (%edi)
       inc %edi
 
-      #call get_unix_sec                       # get the current unix time
+      call get_unix_sec                       # get the current unix time
+
+      movl %eax, %ebx                         # temp put in in the adress of the unix time in $ebx
+      movl (%ebx), %eax                       # deferenace the $ebx pointer back into $eax
+      movl %ecx, %ebx                         # move the intleng into the 3rd param of the func
+      pushl %edi                              # back %edi so IntToString wont interfere
+      leal TimeMakerMemory, %edi              # link the timer memory to the %edi 2nd parameter
+      call IntToString                        # convert the resulted unix time to a string
+
+      leal TimeMakerMemory, %eax
+      popl %edi                               # take back %edi for the string copy
+      .assign_unix_time_loop:
+      movb (%eax), %bl
+      cmpb $0, %bl
+      je .got_unix_time
+      movb %bl, (%edi)
+      inc %edi
+      inc %eax
+      jmp .assign_unix_time_loop
+      .got_unix_time:
 
       #pushl %eax                              # temp copy unix time to stack
       #call get_current_year                   # get the current year
@@ -273,10 +295,6 @@
       # clear the string we where logging
       leal StringLogMemory, %eax
       call Clear_SCOM
-
-      movl $1, %eax
-      movl $99, %ebx
-      int $0x80
 
       jmp .logged_svr_msg
 

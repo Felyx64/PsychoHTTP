@@ -141,13 +141,14 @@
 
     call Analyze_Request                      # call a function that analyses what the host is asking
 
+    pushl %eax                                # temp backup the routecode
     movl $1, %eax                             # move the id into the 1st log param
     call Log_Message                          # trigger the logger
-
-    popl %ebx                                 # move connection fd into the %ebx second param
+    popl %eax                                 # get back the routecode
 
     cmpl $1, %eax                             # compare if the route getter return 1 meaning its not a valid request
     jne .no_get_routeerr                      # if it is valid we check what type of request it was
+    popl %ebx                                 # move connection fd into the %ebx second param
     leal 4(%esp), %edi                        # move server config into edi param
     movl $369, %eax                           # move syscall code (sendto) into %eax
     movl $16, %ebp                            # move the server config into last param
@@ -158,6 +159,7 @@
 
     .no_get_routeerr:                         # label to jump to if we had no bad request
 
+    pushl %eax                                # temp backup the routecode
     call Filter_Request                       # filter the request to check if its allowed
 
     .done_filtering:
@@ -165,7 +167,15 @@
     je .request_allowed                       # jump it request is allowed
     movl $8, %eax                             # move 8 which will become 6 if request was not allowed
     .request_allowed:                         # label to jump to if request is allowed
-    call RouteRequest                         # route the request itself
+
+    popl %eax                                 # get back the routecode
+    leal 4(%esp), %ebx                        # move server config into ebx 2nd param
+    popl %ecx                                 # move connection fd into the %ebx second param
+    call RouteRequest
+
+    movl $1, %eax
+    movl $99, %ebx
+    int $0x80
 
     cmpl $0, %eax                             # check if sendmsg had an error
     jnl .no_sendmsg_error_found               # jump over error handling if not

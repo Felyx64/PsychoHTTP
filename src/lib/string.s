@@ -119,31 +119,60 @@
   # PARAM (%EAX) the int that needs to be converted to string
   # PARAM (%EDI) pointer to the first character of the string we need to put the number into
   # DESCRIPTION: turn int to string
-  # OVERWRITES: EBX, ECX, ESI
+  # OVERWRITES: EBX, ESI
   # RETURNS (%EDI) first char of the converted int to string
   IntToString:
-    movl $0, %ecx                 # move 0 into the counter
+    movl $10, %ebx                # move the length into the powering area of %eax
     .int_str_convert_loop:        # start converting the int to string
     xorl %edx, %edx               # reset the insertion register
-    movl $10, %ebx                # move 10 into devision for the coming divison operation
-    div %ebx                      # execute %eax = %eax / %ebx
+    div %ebx                      # do %eax / %ebx
     addb $0x30, %dl               # add 0x30 to the remainder so it converts fully its char aquivelant
-    movb %dl, -1(%edi,%ecx)       # push the what's now the converted char into the string
-    incl %ecx                     # increment the counter
+    movb %dl, (%edi)              # push the what's now the converted char into the string
+    inc %edi                      # increment the string pointer
     testl %eax, %eax              # now we will check the result we got
     jnz .int_str_convert_loop     # if the result was 0 we are at the end of the loop
-    movb $0, (%edi,%ecx)          # move the null teminator into the string to end it off
-    leal -1(%edi,%ecx), %esi      # get last number of string back into %esi as temp as we need to reverse it now
-    leal (%edi), %edi             # create a link to the first number in the string to %edi
-    .reverse_loop:                # start reversing the string as we now have the string but innverseded
-    cmp %esi, %edi                # compare %esi to %edi to check if we have fully reversed the string
-    jge .strint_convert_done      # jump to convertsion done if it is
-    movb -1(%esi), %dl            # grab char 1
-    movb -1(%edi), %al            # grab char 2
-    movb %dl, -1(%edi)            # place char 1
-    movb %al, (%esi)              # place char 2
-    decl %esi                     # decmrement %esi
-    incl %edi                     # increment %edi
+    movb $0, (%edi)               # end the string with a null terminator
+    movl %edi, %esi               # copy the %edi string pointer to %esi
+    movl $0, %ecx                 # move 0 int the reverse length
+    .search_str_start:            # start searching for the bigining of the str
+    dec %esi                      # decrement %esi we have not found the starting 0
+    inc %ecx                      # increment until we reach the reverse leng
+    movb (%esi), %al              # move defereranced %esi to %al
+    cmpb $0, %al                  # check if we have found it
+    jne .search_str_start         # jump back if not
+    inc %esi                      # increment %esi so its not pointing to null
+    dec %edi                      # decrement %edi so we are not pointing to null there neither
+    dec %ecx                      # decrement the reverse leng as we always overrun by 1
+    xorl %edx, %edx               # cleanup %edx for the coming div
+    movl %ecx, %eax               # move the reverse-leng to %eax tempoirly
+    movl $2, %ebx                 # move 2 into $ebx so we can divede by 2
+    div %ebx                      # execute: %eax / %ebx
+    movl %eax, %ecx               # move the result back into %ecx as we now have to good reverse-leng
+    xorl %edx, %edx               # clearout $edx again so as needed for the reverse loops
+    testl $1, %ecx                # check if even or uneven number
+    je .reverse_loop              # go here if even number
+    jne .reverse_str_odd          # go here if odd number
+    .reverse_loop:                # reverse the string if even number
+    cmpl %ecx, %edx
+    je .string_convert_done
+    movb (%esi), %al
+    movb (%edi), %bl
+    movb %bl, (%esi)
+    movb %al, (%edi)
+    inc %esi
+    dec %edi
+    inc %edx
     jmp .reverse_loop             # jump back to start of loop
-    .strint_convert_done:         # if everything is done go here
+    .reverse_str_odd:             # reverse the string if odd number
+    cmpl %ecx, %edx
+    ja .string_convert_done
+    movb (%esi), %al
+    movb (%edi), %bl
+    movb %bl, (%esi)
+    movb %al, (%edi)
+    inc %esi
+    dec %edi
+    inc %edx
+    jmp .reverse_str_odd
+    .string_convert_done:         # if everything is done go here
     ret

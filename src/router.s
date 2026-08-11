@@ -24,7 +24,12 @@
   TempResponseErrorObjLen = . - TempResponseErrorObj - 1
 
 .section .text
+  # PARAM ($EAX) THE SERVER ROUTE CODE
+  # PARAM ($EBX) PTR TO SERVER CONFIG
+  # PARAM ($ECX) SERVER-FD
   RouteRequest:
+    # curl -i example.com
+
     subl $2, %eax                               # subtract 2 from %eax or else the switch wont work
     jmp *response_table(,%eax,4)                # jump to the adress which this number correlates to on the adress table (this is the switch statement)
 
@@ -36,7 +41,8 @@
       .long is_disallowed_request               # if code 6 (disallowed) this adress will be jumped to
 
   is_get_root:
-    leal 4(%esp), %edi                          # move server config into edi param
+    movl %ebx, %edi                             # move server config into edi param
+    movl %ecx, %ebx                             # move server-fd into the 2nd param
     movl $369, %eax                             # move syscall code (sendto) into %eax
     movl $16, %ebp                              # move the server config into last param
     movl $TempResponseRootObj, %ecx             # move response message to %ecx
@@ -45,7 +51,8 @@
 
     jmp .end_sendout_res
   is_get_styles:
-    leal 4(%esp), %edi                          # move server config into edi param
+    movl %ebx, %edi                             # move server config into edi param
+    movl %ecx, %ebx                             # move server-fd into the 2nd param
     movl $369, %eax                             # move syscall code (sendto) into %eax
     movl $16, %ebp                              # move the server config into last param
     movl $TempResponseStylesObj, %ecx           # move response message to %ecx
@@ -54,7 +61,8 @@
 
     jmp .end_sendout_res
   is_get_posts:
-    leal 4(%esp), %edi                          # move server config into edi param
+    movl %ebx, %edi                             # move server config into edi param
+    movl %ecx, %ebx                             # move server-fd into the 2nd param
     movl $369, %eax                             # move syscall code (sendto) into %eax
     movl $16, %ebp                              # move the server config into last param
     movl $TempResponsePostObj, %ecx             # move response message to %ecx
@@ -63,7 +71,8 @@
 
     jmp .end_sendout_res
   is_posts_uploadpost:
-    leal 4(%esp), %edi                          # move server config into edi param
+    movl %ebx, %edi                             # move server config into edi param
+    movl %ecx, %ebx                             # move server-fd into the 2nd param
     movl $369, %eax                             # move syscall code (sendto) into %eax
     movl $16, %ebp                              # move the server config into last param
     movl $TempResponseUploadObj, %ecx           # move response message to %ecx
@@ -72,7 +81,8 @@
 
     jmp .end_sendout_res
   is_disallowed_request:
-    leal 4(%esp), %edi                          # move server config into edi param
+    movl %ebx, %edi                             # move server config into edi param
+    movl %ecx, %ebx                             # move server-fd into the 2nd param
     movl $369, %eax                             # move syscall code (sendto) into %eax
     movl $16, %ebp                              # move the server config into last param
     movl $TempResponseDisallowedObj, %ecx       # move response message to %ecx
