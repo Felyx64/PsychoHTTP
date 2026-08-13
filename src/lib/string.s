@@ -176,3 +176,25 @@
     jmp .reverse_str_odd
     .string_convert_done:         # if everything is done go here
     ret
+
+  # PARAM (%EDI): Source Data Ptr (must be null terminated at the end)
+  # PARAM (%ESI): Destination Data Ptr where to plot to
+  # DESCRIPTION: Plot data to the Ptr without adding a null terminator to the end
+  # PARAM (%EAX): Pointer to the next to last char of the destination data
+  # PARAM (%EBX): How much data was plotted to the dest
+  String_Plot:
+    xorl %ebx, %ebx               # clearout %edx length register
+    .plot_loop:                   # start of plot loop
+    movb (%edi), %al              # move char from adress into %al
+    cmpb $0, %al                  # check if it is end of string
+    je .data_plotted              # jump if end of string
+    movb %al, (%esi)              # if not move char into the dest
+    inc %esi                      # increment the dest ptr
+    inc %ebx                      # increment the length register
+    jmp .plot_loop                # jump back to start of loop
+    .data_plotted:                # here we go if data has been plotted
+    movl %esi, %eax               # move dest to main return address
+    ret                           # return
+
+  IntToStringHEX:
+    ret

@@ -16,6 +16,9 @@
   SCOM_IntStr_Convert_Results:
     .space 512
 
+  SCOM_Response_Creation_Table:
+    .space 2048
+
   GSCOM_Server_Filter:
     .space 1024
 
@@ -31,6 +34,19 @@
     incl %eax             # increment %eax
     cmpl %ebx, %eax       # compare the max and current pointer
     jne .clear_loop       # jump back to the start of the loop if we're not done clearing'
+    ret
+
+  # clears an scom with 2048 size if needed
+  # Param: (%eax) pointer to scom that has to be cleared
+  # OVERWRITES: EBX
+  Clear_SCOM_2048:
+    movl %eax, %ebx       # copy scom pointer to %ebx
+    addl $2048, %ebx      # add scom's limit to %ebx
+    .clear_loop_2048:     # start clerance loop
+    movb $0, (%eax)       # move 0 into the scom index
+    incl %eax             # increment %eax
+    cmpl %ebx, %eax       # compare the max and current pointer
+    jne .clear_loop_2048  # jump back to the start of the loop if we're not done clearing'
     ret
 
   # copies and pastes scom from 1 memory location to another

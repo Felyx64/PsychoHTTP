@@ -28,8 +28,6 @@
   # PARAM ($EBX) PTR TO SERVER CONFIG
   # PARAM ($ECX) SERVER-FD
   RouteRequest:
-    # curl -i example.com
-
     subl $2, %eax                               # subtract 2 from %eax or else the switch wont work
     jmp *response_table(,%eax,4)                # jump to the adress which this number correlates to on the adress table (this is the switch statement)
 
@@ -41,6 +39,13 @@
       .long is_disallowed_request               # if code 6 (disallowed) this adress will be jumped to
 
   is_get_root:
+    #leal SCOM_Response_Creation_Table, %esi
+    #leal Root_Route_Reponse, %edi
+
+    #call String_Plot
+
+
+    # temp remove
     movl %ebx, %edi                             # move server config into edi param
     movl %ecx, %ebx                             # move server-fd into the 2nd param
     movl $369, %eax                             # move syscall code (sendto) into %eax
@@ -92,3 +97,56 @@
     .end_sendout_res:
 
     ret
+
+# SCOM_Response_Creation_Table
+# call Clear_SCOM_2048
+
+.section .data
+  Response_Line_Starter_And_Terminator:
+    .ascii "\r\n"
+
+  Root_Route_Reponse:
+    .ascii "HTTP/1.1 200 OK\r\n"
+    .ascii "Content-Type: text/html\r\n"
+    .ascii "Server: SpookyFunnyAssemblyServer :3\r\n"
+    .ascii "Allow: GET\r\n"
+    .ascii "Connection: close\r\n"
+    .ascii "Transfer-Encoding: chunked\r\n"
+    .ascii "Date:"
+
+  Styles_Route_Response:
+    .ascii "HTTP/1.1 200 OK\r\n"
+    .ascii "Content-Type: text/css\r\n"
+    .ascii "Server: SpookyFunnyAssemblyServer :3"
+    .ascii "Allow: GET\r\n"
+    .ascii "Connection: close\r\n"
+    .ascii "Transfer-Encoding: chunked\r\n"
+    .ascii "Date:"
+
+  GetPosts_Route_Response:
+    .ascii "HTTP/1.1 200 OK\r\n"
+    .ascii "Content-Type: application/json"
+    .ascii "Server: SpookyFunnyAssemblyServer :3"
+    .ascii "Allow: GET\r\n"
+    .ascii "Connection: close\r\n"
+    .ascii "Range: bytes=1000-1999"
+    .ascii "Transfer-Encoding: chunked\r\n"
+    .ascii "Date:"
+
+  UploadPosts_Route_Response:
+    .ascii "HTTP/1.1 200 OK\r\n"
+    .ascii "Content-Type: application/json"
+    .ascii "Server: SpookyFunnyAssemblyServer :3"
+    .ascii "Allow: POST\r\n"
+    .ascii "Connection: close\r\n"
+    .ascii "Transfer-Encoding: chunked\r\n"
+    .ascii "Date:"
+
+  Disallowed_Route_Response:
+    .ascii "HTTP/1.1 403 FORBIDDEN\r\n"
+    .ascii "Content-Type: text/html\r\n"
+    .ascii "Server: SpookyFunnyAssemblyServer :3\r\n"
+    .ascii "Allow: GET\r\n"
+    .ascii "Connection: close\r\n"
+    .ascii "Transfer-Encoding: chunked\r\n"
+    .ascii "Date:"
