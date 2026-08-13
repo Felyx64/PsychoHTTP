@@ -53,27 +53,19 @@
 
   # PARAM: (%EAX) holds current iso data-time
   # DESCRIPTION: gets the current year
-  # RETURNS: (%EAX) holds the current year as of today
-  # RETURNS: (%EBX) holds info if current year is a leap year and how close are are to one. 1 = not leap year, 4 = leap year
   # RETURNS: (%EAX) the current year
   get_current_year:
-    movl $1, %ebx                         # move 1 into %ebx as we are not in leap year yet
-    .get_year_loop:                       # start of loop that gets the year
-    cmpl $4, %ebx                         # check if we are in a leap year
-    jne .no_leap_year                     # jump to normal year logic if we are not
-    subl $NUMBERS_IN_LEAP_YEAR, %eax      # subtract year seconds from the iso date if leap year
-    cmpl $NUMBERS_IN_LEAP_YEAR, %eax      # check if we got the year
-    jl .got_the_year                      # jump to the we got the year if we did
-    movl $1, %ebx                         # reset the leap year counter
-    jmp .get_year_loop                    # jump back to loop begin if not
-    .no_leap_year:                        # start of the normal year logic
-    subl $NUMBERS_IN_NORMAL_YEAR, %eax    # subtract normal year numbers if normal year
-    cmpl $NUMBERS_IN_NORMAL_YEAR, %eax    # check if we got the year
-    jl .got_the_year                      # jump to the we got the year if we did
-    inc %ebx                              # increment the year year counter if we did not
-    jmp .get_year_loop                    # jump back if we still have no reached the end
-    .got_the_year:                        # go here if we found the year and return
-    ret
+    # x = 1970 + floor(time() / (86400 * 365.25))
+    movss number_in_day_float, %xmm0
+    movss year_calc_num, %xmm1
+    mulss %xmm0, %xmm1
+    cvtsi2sd %eax, %xmm0
+    cvtss2sd %xmm1, %xmm1 # may need to truncate this?
+    divsd %xmm1, %xmm0
+    cvtsd2si %xmm0, %eax
+    addl $1970, %eax
+    .test_this: # %eax holds number 0 and expected the number was 56
+    ret # GIVES 2027 but nearly there!!
 
   # PARAM: (%EAX) holds current iso data-time
   # DESCRIPTION: gets the current momth of the year
@@ -187,3 +179,9 @@
 # set constants needed for the year conversions
 .set NUMBERS_IN_NORMAL_YEAR, 31536000
 .set NUMBERS_IN_LEAP_YEAR, 31622400
+
+.section .data
+  number_in_day_float:
+    .float 86400.0
+  year_calc_num:
+    .float 365.25

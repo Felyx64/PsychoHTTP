@@ -100,35 +100,52 @@
 
       movl %eax, %ebx                         # temp put in in the adress of the unix time in $ebx
       movl (%ebx), %eax                       # deferenace the $ebx pointer back into $eax
-      movl %ecx, %ebx                         # move the intleng into the 3rd param of the func
-      pushl %edi                              # back %edi so IntToString wont interfere
+
+      pushl %edi
+      call get_current_year                   # get the current year
       leal TimeMakerMemory, %edi              # link the timer memory to the %edi 2nd parameter
-      call IntToString                        # convert the resulted unix time to a string
+      call IntToString                        # convert the resulted year to a string
 
       leal TimeMakerMemory, %eax
-      popl %edi                               # take back %edi for the string copy
-      .assign_unix_time_loop:
-      movb (%eax), %bl
-      cmpb $0, %bl
-      je .got_unix_time
-      movb %bl, (%edi)
-      inc %edi
-      inc %eax
-      jmp .assign_unix_time_loop
-      .got_unix_time:
+      popl %edi
 
-      #pushl %eax                              # temp copy unix time to stack
-      #call get_current_year                   # get the current year
-      #leal SCOM_IntStr_Convert_Results, %edi  # link the string copy result buffer to %edi
-      #call IntToString                        # convert the resulted year to a string
-      #popl %ebx                               # remove the unix time from the stack to prevent corruption
-      #pushw 0(%edi)                           # push the year-str to the stack
-      #pushw 1(%edi)                           # push the year-str to the stack
-      #pushw 2(%edi)                           # push the year-str to the stack
-      #pushw 3(%edi)                           # push the year-str to the stack
-      #movl %edi, %eax                         # move the resulted buffer to %eax
-      #call Clear_SCOM                         # clear the resulted buffer
-      #movl %ebx, %eax                         # move the unix time back to the %eax to continue
+      movb (%eax), %bl
+      .get_bl_contents_1:
+      #movb %bl, (%edi)
+      #inc %edi
+      inc %eax
+
+      movb (%eax), %bl
+      .get_bl_contents_2:
+      #movb %bl, (%edi)
+      #inc %edi
+      inc %eax
+
+      movb (%eax), %bl
+      .get_bl_contents_3:
+      #movb %bl, (%edi)
+      #inc %edi
+      inc %eax
+
+      movb (%eax), %bl
+      .get_bl_contents_4:
+      #movb %bl, (%edi)
+      #inc %edi
+      inc %eax
+
+      #leal TimeMakerMemory, %eax
+      #popl %edi                               # take back %edi for the string copy
+      #.assign_unix_time_loop:
+      #movb (%eax), %bl
+      #cmpb $0, %bl
+      #je .got_unix_time
+      #movb %bl, (%edi)
+      #inc %edi
+      #inc %eax
+      #jmp .assign_unix_time_loop
+      #.got_unix_time:
+
+      #? FROM HERE
 
       #pushw $'-'                              # push log seperator to the stack
 
