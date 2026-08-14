@@ -5,3 +5,6 @@ build/log.txt
 build/obj
 out/*
 other
+.zed
+change.txt
+.gitignore

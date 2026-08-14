@@ -110,25 +110,21 @@
       popl %edi
 
       movb (%eax), %bl
-      .get_bl_contents_1:
       #movb %bl, (%edi)
       #inc %edi
       inc %eax
 
       movb (%eax), %bl
-      .get_bl_contents_2:
       #movb %bl, (%edi)
       #inc %edi
       inc %eax
 
       movb (%eax), %bl
-      .get_bl_contents_3:
       #movb %bl, (%edi)
       #inc %edi
       inc %eax
 
       movb (%eax), %bl
-      .get_bl_contents_4:
       #movb %bl, (%edi)
       #inc %edi
       inc %eax

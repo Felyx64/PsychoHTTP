@@ -60,12 +60,12 @@
     movss year_calc_num, %xmm1
     mulss %xmm0, %xmm1
     cvtsi2sd %eax, %xmm0
-    cvtss2sd %xmm1, %xmm1 # may need to truncate this?
+    movss %xmm1, %xmm0
+    cvtss2sd %xmm1, %xmm1
     divsd %xmm1, %xmm0
-    cvtsd2si %xmm0, %eax
+    cvttsd2si %xmm0, %eax
     addl $1970, %eax
-    .test_this: # %eax holds number 0 and expected the number was 56
-    ret # GIVES 2027 but nearly there!!
+    ret
 
   # PARAM: (%EAX) holds current iso data-time
   # DESCRIPTION: gets the current momth of the year
