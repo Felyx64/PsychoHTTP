@@ -191,6 +191,7 @@
     movb %al, (%esi)              # if not move char into the dest
     inc %esi                      # increment the dest ptr
     inc %ebx                      # increment the length register
+    inc %edi                      # increment the source pointer
     jmp .plot_loop                # jump back to start of loop
     .data_plotted:                # here we go if data has been plotted
     movl %esi, %eax               # move dest to main return address

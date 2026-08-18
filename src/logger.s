@@ -101,81 +101,74 @@
       movl %eax, %ebx                         # temp put in in the adress of the unix time in $ebx
       movl (%ebx), %eax                       # deferenace the $ebx pointer back into $eax
 
+      pushl %eax                              # push the unix time to stack as temp
       pushl %edi
       call get_current_year                   # get the current year
+      pushl %eax                              # temp push year to the stack
       leal TimeMakerMemory, %edi              # link the timer memory to the %edi 2nd parameter
       call IntToString                        # convert the resulted year to a string
 
-      leal TimeMakerMemory, %eax
+      popl %eax                               # temp get back the year for %edi extraction
       popl %edi
+      pushl %eax                              # push back the current year
+      leal TimeMakerMemory, %eax
 
       movb (%eax), %bl
-      #movb %bl, (%edi)
-      #inc %edi
+      movb %bl, (%edi)
+      inc %edi
+      movb $0, (%eax)
       inc %eax
 
       movb (%eax), %bl
-      #movb %bl, (%edi)
-      #inc %edi
+      movb %bl, (%edi)
+      inc %edi
+      movb $0, (%eax)
       inc %eax
 
       movb (%eax), %bl
-      #movb %bl, (%edi)
-      #inc %edi
+      movb %bl, (%edi)
+      inc %edi
+      movb $0, (%eax)
       inc %eax
 
       movb (%eax), %bl
-      #movb %bl, (%edi)
-      #inc %edi
+      movb %bl, (%edi)
+      inc %edi
+      movb $0, (%eax)
       inc %eax
 
-      #leal TimeMakerMemory, %eax
-      #popl %edi                               # take back %edi for the string copy
-      #.assign_unix_time_loop:
-      #movb (%eax), %bl
-      #cmpb $0, %bl
-      #je .got_unix_time
-      #movb %bl, (%edi)
+      popl %ebx                               # get the current year
+      pushl %ebx                              # copy and push back to stack
+      movl %ebx, %eax                         # move the year into the leap_year check param
+      call check_leap_year                    # check if it is a leap year
+      movl %eax, %ecx                         # move the leap year info to the correct daymonth param
+      popl %ebx                               # get the current year (again)
+      popl %eax                               # take back the unix time for the month getter
+
+      movl $'-', (%edi)
+      inc %edi
+
+      call get_current_daymonth
+      pushl %eax
+      movl %edi, %esi
+      movl %ebx, %edi
+      call String_Plot
+      movl %esi, %edi
+
+      movl $'-', (%edi)
+      inc %edi
+
+      popl %eax
+      pushl %edi
+      leal TimeMakerMemory, %edi
+      call IntToString
+
+      popl %esi
+      call String_Plot
+      movl %esi, %edi
+
+      #movl $' ', (%edi)
       #inc %edi
-      #inc %eax
-      #jmp .assign_unix_time_loop
-      #.got_unix_time:
-
-      #? FROM HERE
-
-      #pushw $'-'                              # push log seperator to the stack
-
-      #pushl %eax                              # temp copy unix time to stack
-      #call get_current_month                  # get the current month
-      #leal SCOM_IntStr_Convert_Results, %edi  # link the string copy result buffer to %edi
-      #call IntToString                        # convert the resulted month to a string
-      #popl %ecx                               # remove the unix time from the stack to prevent corruption
-      #pushw 0(%edi)                           # push the first non-corrupt diget to the stack
-      #cmpl $0, 1(%edi)                        # check if next char is end of month-str
-      #je .no_second_month_diget               # jump if not second diget
-      #pushw 1(%edi)                           # if yes: push char into the stack
-      #.no_second_month_diget:                 # label to jump to if there is no second diget
-      #movl %edi, %eax                         # move the resulted buffer to %eax
-      #call Clear_SCOM                         # clear the resulted buffer
-      #movl %ecx, %eax                         # move the unix time back to the %eax to continue
-
-      #pushw $'-'                              # push log seperator to the stack
-
-      #pushl %eax                              # temp copy unix time to stack
-      #call get_current_day                    # get the current day
-      #leal SCOM_IntStr_Convert_Results, %edi  # link the string copy result buffer to %edi
-      #call IntToString                        # convert the resulted day to a string
-      #popl %ecx                               # remove the unix time from the stack to prevent corruption
-      #pushw 0(%edi)                           # push the first non-corrupt diget to the stack
-      #cmpl $0, 1(%edi)                        # check if next char is end of month-str
-      #je .no_second_day_diget                 # jump if not second diget
-      #pushw 1(%edi)                           # if yes: push char into the stack
-      #.no_second_day_diget:                   # label to jump to if there is no second diget
-      #movl %edi, %eax                         # move the resulted buffer to %eax
-      #call Clear_SCOM                         # clear the resulted buffer
-      #movl %ecx, %eax                         # move the unix time back to the %eax to continue
-
-      #pushw $' '                              # push log seperator to the stack
 
       #pushl %eax                              # temp copy unix time to stack
       #call get_current_hour                   # get the current hour

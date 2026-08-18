@@ -29,12 +29,12 @@
     pushl %eax                            # push the year to the stack so it sits there unharmed
     movl %ebx, %eax                       # move the unix time back to %eax
     pushl %eax                            # copy the unix time to the stack as a temp
-    call get_current_month                # get the month
+    #call get_current_month                # get the month
     popl %ebx                             # pop the unix time from the stack back to the %ebx register
     pushl %eax                            # push the month to the stack so it sits there unharmed
     movl %ebx, %eax                       # move the unix time back to %eax
     pushl %eax                            # copy the unix time to the stack as a temp
-    call get_current_day                  # get the day
+    #call get_current_day                  # get the day
     popl %ebx                             # pop the unix time from the stack back to the %ebx register
     pushl %eax                            # push the day to the stack so it sits there unharmed
     movl %ebx, %eax                       # move the unix time back to %eax
@@ -60,88 +60,150 @@
     movss year_calc_num, %xmm1
     mulss %xmm0, %xmm1
     cvtsi2sd %eax, %xmm0
-    movss %xmm1, %xmm0
     cvtss2sd %xmm1, %xmm1
     divsd %xmm1, %xmm0
     cvttsd2si %xmm0, %eax
     addl $1970, %eax
     ret
 
+  # PARAM: (%EBX) holds the curret year
+  # OVERWRITES: EBX, EDX, ESI
+  # RETURNS: (%EAX) holds if its a leap year or not. 0 = no_leap, 1 = leap
+  check_leap_year:
+    movl $1, %ecx
+    movl $0, %esi
+    movl $4, %ebx
+    div %ebx
+    cmpl $0, %edx
+    cmovel %ecx, %eax
+    cmovnel %esi, %eax
+    ret
+
   # PARAM: (%EAX) holds current iso data-time
+  # PARAM: (%EBX) holds the curret year
+  # PARAM: (%ECX) holds info if its the leap year
+  # OVERWRITES: EDX, ESI
   # DESCRIPTION: gets the current momth of the year
   # RETURNS: (%EAX) holds the current month of the year
-  # OVERWRITES: %ECX %EDX
-  # RETURNS: (%EAX) the current month
-  get_current_month:
-    pushl %eax                            # push the iso int to the stack tempoirly
-    call get_current_year                 # get the current year so we can tell if its a leap year or not
-    movl $1, %eax                         # move 1 into the month counter to initialize it
-    movl %ebx, %ecx                       # move the leap year info to %ecx
-    popl %ebx                             # bring the iso date back into the ebx register
-    movl $1, %edi                         # move 1 into %edi as its needed for a cmovel later on
-    .get_month_in_year:                   # start of get month loop
+  get_current_daymonth:
+    # get days since jan-1
+    # x = floor(unix_time / 86400 - (current_year - 1970) * 365.25)
+    subl $1970, %ebx
+    cvtsi2sd %ebx, %xmm0
+    movsd year_calc_num_64, %xmm1
+    mulsd %xmm1, %xmm0
+    movsd number_in_day_float_64, %xmm2
+    cvtsi2sd %eax, %xmm1
+    divsd %xmm2, %xmm1
+    subsd %xmm0, %xmm1
+    cvttsd2si %xmm1, %eax
 
-    pushl %eax                            # temp push iso date to stack
-    pushl %ebx                            # temp push current month info to stack
-    pushl %ecx                            # temp push leap year info to stack
-    movl $2, %ecx                         # move the divisor needed to getting the good month to %ecx
-    movl %ebx, %eax                       # temp move on_month copy to the %eax needed for devision
-    div %ecx                              # enact the devision %eax / %ecx, remainder stored in %edx
-    popl %ecx                             # restore the leap year info back from the stack
-    popl %ebx                             # restore the current month info back from the stack
-    popl %eax                             # restore the iso date back from the stack
-    cmpl $0, %edx                         # check if we have a leap year as this is what the division remainder tells us
-    je .long_month                        # if 0 its a short month (30 days)
-    jne .short_month                      # if not 0 its a long month (31 days)
-
-    .short_month:                         # remove the short month from the iso date
-    cmpl $13, %eax                        # check if we have hit month 13 meaning we need to reset the month timer
-    cmovel %edi, %eax                     # reset %eax if it is
-    je .get_month_in_year                 # back to loop if it is month 13
-    subl $NUMBERS_IN_NORMAL_MONTH, %ebx   # remove a short month worth of seconds from %ebx
-    cmpl $NUMBERS_IN_NORMAL_MONTH, %ebx   # check we found the good month
-    jl .found_the_month                   # goto end of function if we found the good month
-    inc %eax                              # increment the current month if not
-    jmp .get_month_in_year                # back to loop if not
-
-    .long_month:                          # remove the long month from the iso date
-    cmpl $2, %eax                         # check if we have hit the 2 which is feb aka not a normal month
-    je .in_february                       # jump to february if we are in february
-    subl $NUMBERS_IN_LONG_MONTH, %ebx     # remove a long month worth of seconds from %ebx
-    cmpl $NUMBERS_IN_LONG_MONTH, %ebx     # check we found the good month
-    jl .found_the_month                   # goto end of function if we found the good month
-    inc %eax                              # increment the current month if not
-    jmp .get_month_in_year                # back to loop if not
-
-    .in_february:                         # remove the normal february from the iso date
-    cmpl $4, %ecx                         # check if we are in a leap year
-    je .in_february_leap                  # move the the leap year logic if is leap year
-    subl $NUMBERS_IN_FEBRUARY, %ebx       # remove a february worth of seconds from %ebx
-    cmpl $NUMBERS_IN_FEBRUARY, %ebx       # check we found the good month
-    jl .found_the_month                   # goto end of function if we found the good month
-    inc %eax                              # increment the current month if not
-    jmp .get_month_in_year                # back to loop if not
-
-    .in_february_leap:                    # remove the leap february from the iso date
-    subl $NUMBERS_IN_LEAP_FEBRUARY, %ebx  # remove a leap february worth of seconds from %ebx
-    cmpl $NUMBERS_IN_LEAP_FEBRUARY, %ebx  # check we found the good month
-    jl .found_the_month                   # goto end of function if we found the good month
-    inc %eax                              # increment the current month if not
-    jmp .get_month_in_year                # back to loop if not
-
-    .found_the_month:                     # end of function if we found the month
-    movl %ebx, %eax                       # move result to accumilator
-    ret                                   # return
-
-  # PARAM: (%EAX) holds current iso data-time
-  # RETURNS: (%EAX) holds the current day of the month
-  # OVERWRITES: %ECX, %EDX
-  # RETURNS: (%EAX) the current day
-  get_current_day:
-    call get_current_month
-    movl $NUMBERS_IN_DAY, %ecx
-    div %ecx
+    # check if we are on january
+    cmpl $31, %eax                        # if: 31 > days_since_jan1(%eax)
+    ja .not_january                       # skip logic if true
+    inc %eax
+    leal January_Month, %ebx
     ret
+    .not_january:
+
+    movl $60, %ebx
+
+    # check if we have a leap year
+    cmpl $0, %ecx
+    je .not_ly
+    inc %ebx                              # increment to account the leap year
+    .not_ly:
+
+    movl %ecx, %esi                       # move the leap year info %esi
+
+    # check if we are on february
+    cmpl %eax, %ebx                       # if: days_since_jan1(%eax) < days_counter(%ebx)
+    jl .not_february                      # skip logic if true
+    subl $30, %eax
+    leal February_Month, %ebx
+    ret
+    .not_february:
+
+    # iterate over other months
+    movl $31, %ecx                        # (x) determines and iterates if the month has 31 or 30 days
+    xorl %edx, %edx                       # (y) array index on which month we have
+    .month_getter_loop:                   # start of get month loop
+    cmpl %eax, %ebx                       # if: days_since_jan1(%eax) < days_counter(%ebx)
+    jl .did_not_hit_good_month            # skip logic if true
+    call switch_days                      # switch the %ecx from 31/30 last time
+    cmpl $0, %esi                        # check if we are leap year (again)
+    jne .not_leap_year                    # jump if we are in a leap year
+    subl $2, %ebx
+    dec %edx
+    .not_leap_year:                       # start here if leap year
+    subl %ecx, %ebx # may need to rotate the 2 subls
+    subl %ebx, %eax
+    call link_month
+    ret
+    .did_not_hit_good_month:               # if we still have not gotten the month
+    addl %ecx, %ebx
+    call switch_days                       # switch the %ecx from 31/30
+    inc %edx
+    jmp .month_getter_loop
+
+    switch_days:
+      cmpl $31, %ecx
+      jne .31_days
+      movl $30, %ecx
+      jmp .switched_days
+      .31_days:
+      movl $31, %ecx
+      .switched_days:
+      ret
+
+    link_month:
+      jmp *link_month_table(,%edx,4)
+      link_month_table:
+        .long is_March
+        .long is_April
+        .long is_May
+        .long is_June
+        .long is_July
+        .long is_August
+        .long is_September
+        .long is_October
+        .long is_November
+        .long is_December
+
+        is_March:
+          leal March_Month, %ebx
+          jmp .linked_month
+        is_April:
+          leal April_Month, %ebx
+          jmp .linked_month
+        is_May:
+          leal May_Month, %ebx
+          jmp .linked_month
+        is_June:
+          leal June_Month, %ebx
+          jmp .linked_month
+        is_July:
+          leal July_Month, %ebx
+          jmp .linked_month
+        is_August:
+          leal August_Month, %ebx
+          jmp .linked_month
+        is_September:
+          leal September_Month, %ebx
+          jmp .linked_month
+        is_October:
+          leal October_Month, %ebx
+          jmp .linked_month
+        is_November:
+          leal November_Month, %ebx
+          jmp .linked_month
+        is_December:
+          leal December_Month, %ebx
+          jmp .linked_month
+
+      .linked_month:
+      ret
+  # return happens inside the got month section
 
   # PARAM: (%EAX) holds current iso data-time
   # RETURNS: (%EAX) holds the current hour
@@ -183,5 +245,35 @@
 .section .data
   number_in_day_float:
     .float 86400.0
+  number_in_day_float_64:
+    .double 86400.0
   year_calc_num:
     .float 365.25
+  year_calc_num_64:
+    .double 365.25
+
+  # month map
+  January_Month:
+    .asciz "January"
+  February_Month:
+    .asciz "February"
+  March_Month:
+    .asciz "March"
+  April_Month:
+    .asciz "April"
+  May_Month:
+    .asciz "May"
+  June_Month:
+    .asciz "June"
+  July_Month:
+    .asciz "July"
+  August_Month:
+    .asciz "August"
+  September_Month:
+    .asciz "September"
+  October_Month:
+    .asciz "October"
+  November_Month:
+    .asciz "November"
+  December_Month:
+    .asciz "December"
