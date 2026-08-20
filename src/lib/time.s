@@ -207,40 +207,43 @@
 
   # PARAM: (%EAX) holds current iso data-time
   # RETURNS: (%EAX) holds the current hour
-  # OVERWRITES: %ECX, %EDX
-  # RETURNS: (%EAX) the current hour
+  # OVERWRITES: %EBX, %EDX
   get_current_hour:
-    movl $NUMBERS_IN_HOURS, %ecx
+    # x = floor(time() / 3600 + 2) mod 24
+    # x = floor((unix_time + timezone_offset) / 3600) mod 24
+    cvtsi2sd %eax, %xmm0
+    movsd CET_Offset_secinhour, %xmm1
+    divsd %xmm1, %xmm0
+    addsd Timezone_Summer_Offeset, %xmm0
+    cvtsd2si %xmm0, %eax
     xorl %edx, %edx
-    divl %ecx
+    movl $24, %ebx
+    div %ebx
     movl %edx, %eax
     ret
 
   # PARAM: (%EAX) holds current iso data-time
   # RETURNS: (%EAX) holds the current minute
-  # OVERWRITES: %ECX, %EDX
+  # OVERWRITES: %EBX, %EDX
   # RETURNS: (%EAX) the current minute
   get_current_minute:
-    movl $NUMBERS_IN_SECONDS, %ecx
+    # x = ((unix_time % 86400) / 60) mod 60
+    movl $NUMBER_IN_DAY_INT, %ebx
     xorl %edx, %edx
-    divl %ecx
+    div %ebx
+    movl %edx, %eax
+    xorl %edx, %edx
+    movl $SECONDS_IN_MINUTES, %ebx
+    div %ebx
+    movl $SECONDS_IN_MINUTES, %ebx
+    xorl %edx, %edx
+    div %ebx
     movl %edx, %eax
     ret
 
 # set constants needed for the conversions
-.set NUMBERS_IN_SECONDS, 60
-.set NUMBERS_IN_HOURS, 3600
-.set NUMBERS_IN_DAY, 86400
-
-# set constants needed for the month conversions
-.set NUMBERS_IN_NORMAL_MONTH, 2592000
-.set NUMBERS_IN_LONG_MONTH, 2678400
-.set NUMBERS_IN_FEBRUARY, 2419200
-.set NUMBERS_IN_LEAP_FEBRUARY, 2505600
-
-# set constants needed for the year conversions
-.set NUMBERS_IN_NORMAL_YEAR, 31536000
-.set NUMBERS_IN_LEAP_YEAR, 31622400
+.set SECONDS_IN_MINUTES, 60
+.set NUMBER_IN_DAY_INT, 86400
 
 .section .data
   number_in_day_float:
@@ -251,6 +254,10 @@
     .float 365.25
   year_calc_num_64:
     .double 365.25
+  CET_Offset_secinhour:
+    .double 3600.0
+  Timezone_Summer_Offeset:
+    .double 2.0
 
   # month map
   January_Month:

@@ -148,55 +148,91 @@
       movl $'-', (%edi)
       inc %edi
 
-      call get_current_daymonth
-      pushl %eax
+      pushl %eax                              # backup the unix time again
+      call get_current_daymonth               # get current month and day of year
+      pushl %eax                              # push back day for later
       movl %edi, %esi
       movl %ebx, %edi
-      call String_Plot
+      call String_Plot                        # put month on log
       movl %esi, %edi
 
       movl $'-', (%edi)
       inc %edi
 
-      popl %eax
+      popl %eax                               # put day on the log around this section
       pushl %edi
       leal TimeMakerMemory, %edi
+      cmpl $10, %eax                          # check if signle diget
+      jnae .single_diget_stringify
       call IntToString
+      jmp .done_day_stringification
+      .single_diget_stringify:
+      addl $0x30, %eax
+      movb %al, (%edi)
+      inc %edi
+      movb $0, (%edi)
+      .done_day_stringification:
 
       popl %esi
+      leal TimeMakerMemory, %edi
       call String_Plot
       movl %esi, %edi
 
-      #movl $' ', (%edi)
-      #inc %edi
+      movl $' ', (%edi)
+      inc %edi
 
-      #pushl %eax                              # temp copy unix time to stack
-      #call get_current_hour                   # get the current hour
-      #leal SCOM_IntStr_Convert_Results, %edi  # link the string copy result buffer to %edi
-      #call IntToString                        # convert the resulted day to a string
-      #popl %ecx                               # remove the unix time from the stack to prevent corruption
-      #pushw 0(%edi)                           # push the first non-corrupt diget to the stack
-      #cmpl $0, 1(%edi)                        # check if next char is end of month-str
-      #je .no_second_hour_diget                # jump if not second diget
-      #pushw 1(%edi)                           # if yes: push char into the stack
-      #.no_second_hour_diget:                  # label to jump to if there is no second diget
-      #movl %edi, %eax                         # move the resulted buffer to %eax
-      #call Clear_SCOM                         # clear the resulted buffer
-      #movl %ecx, %eax                         # move the unix time back to the %eax to continue
+      popl %eax                               # take the unix time back from the backup
+      pushl %eax                              # backup the unix time for the so-many'th time
 
-      #pushw $':'                              # push log seperator to the stack
+      call get_current_hour                   # get current hour of the day
 
-      #call get_current_minute                 # get the current minute
-      #leal SCOM_IntStr_Convert_Results, %edi  # link the string copy result buffer to %edi
-      #call IntToString                        # convert the resulted day to a string
-      #pushw 0(%edi)                           # push the first non-corrupt diget to the stack
-      #cmpl $0, 1(%edi)                        # check if next char is end of month-str
-      #je .no_second_minute_diget              # jump if not second diget
-      #pushw 1(%edi)                           # if yes: push char into the stack
-      #.no_second_minute_diget:                # label to jump to if there is no second diget
-      #cmovel %ebx, %esp                       # if no: reset the stack pointer to its previous state
-      #movl %edi, %eax                         # move the resulted buffer to %eax
-      #call Clear_SCOM                         # clear the resulted buffer
+      # convert the hour we got to string and plot it onto the log
+      cmpl $10, %eax
+      jl .lower_hour
+      xorl %edx, %edx
+      movl $10, %ebx
+      div %ebx
+      addl $0x30, %eax
+      movb %al, (%edi)
+      inc %edi
+      addl $0x30, %edx
+      movb %dl, (%edi)
+      inc %edi
+      jmp .assigned_hour
+      .lower_hour:
+      movb $0x30, (%edi)                      # 0x30 = just 0 in ascii, not to be confusted with \0
+      inc %edi
+      addl $0x30, %eax
+      movb %al, (%edi)
+      inc %edi
+      .assigned_hour:
+
+      movl $':', (%edi)
+      inc %edi
+
+      popl %eax
+      call get_current_minute                 # get the current minute of the day
+
+      # convert the minute we got to string and plot it onto the log
+      cmpl $10, %eax
+      jl .lower_minute
+      xorl %edx, %edx
+      movl $10, %ebx
+      div %ebx
+      addl $0x30, %eax
+      movb %al, (%edi)
+      inc %edi
+      addl $0x30, %edx
+      movb %dl, (%edi)
+      inc %edi
+      jmp .assigned_minute
+      .lower_minute:
+      movb $0x30, (%edi)                      # 0x30 = just 0 in ascii, not to be confusted with \0
+      inc %edi
+      addl $0x30, %eax
+      movb %al, (%edi)
+      inc %edi
+      .assigned_minute:
 
       # push log seperators to the stack
       movb $']', (%edi)

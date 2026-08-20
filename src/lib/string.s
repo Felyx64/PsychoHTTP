@@ -116,6 +116,7 @@
     movl $0, %eax                 # move 0 False into %esi
     ret                           # return
 
+  #? REDO AND BUG FIX ODD NUMBERS LATER
   # PARAM (%EAX) the int that needs to be converted to string
   # PARAM (%EDI) pointer to the first character of the string we need to put the number into
   # DESCRIPTION: turn int to string
@@ -165,7 +166,7 @@
     jmp .reverse_loop             # jump back to start of loop
     .reverse_str_odd:             # reverse the string if odd number
     cmpl %ecx, %edx
-    ja .string_convert_done
+    je .string_convert_done
     movb (%esi), %al
     movb (%edi), %bl
     movb %bl, (%esi)
