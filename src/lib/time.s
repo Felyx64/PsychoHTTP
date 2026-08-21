@@ -3,6 +3,49 @@
       .long 0
 
 .section .text
+  #? UNTESTED
+  # DESCRIPTION: GETS ALL THE
+  # RETURNS (EAX-ESI) all date info
+  # EAX: SECONDS
+  # EBX: MINUTE
+  # ECX: HOUR
+  # EDX: MONTH
+  # ESI: DAY
+  # EDI: YEAR
+  get_current_full_time:
+    call get_unix_sec                     # get the current unix time
+    movl (%eax), %eax                     # got the result out of the RAM
+    pushl %eax                            # backup the unix time
+    call get_current_year                 # get the current year
+    pushl %eax                            # backup the year
+    call check_leap_year                  # check if we are one a leap year
+    movl %eax, %ecx                       # move leap year fact to the %ecx
+    popl %ebx                             # get back the current year
+    popl %eax                             # get the current unix time
+    pushl %ebx                            # push back the current year
+    pushl %eax                            # push back the current unix time
+    call get_current_daymonth             # get the current day and month
+    popl %ecx                             # get back the unix time in %ecx
+    pushl %eax                            # push month to stack
+    pushl %ebx                            # put current day to the stack
+    movl %ecx, %eax                       # move unix time back to %eax
+    pushl %eax                            # backup unix time once again
+    call get_current_hour                 # get the current hour
+    popl %ebx                             # get back the unix time
+    pushl %eax                            # push current hour to stack
+    movl %ebx, %eax                       # move unix time to %eax after %eax was backuped
+    pushl %ebx                            # backup unix time
+    call get_current_minute               # get current minute
+    movl %eax, %edx                       # move minute to %edx
+    popl %eax                             # get back the unix time
+    pushl %edx                            # backup minute time again
+    call get_current_second               # get the current second
+    popl %ebx                             # put current minute to ebx
+    popl %ecx                             # put current hours to ecx
+    popl %edx                             # put current days to edx
+    popl %esi                             # put current months to esi
+    popl %edi                             # put current years to ebx
+    ret
 
   # RETURNS (%EAX) THE CURRENT UNIX TIME
   # OVERWRITES %EAX, %EBX
@@ -11,44 +54,6 @@
     movl $time_buf, %ebx                  # tell sys_time where do send to unix time to
     int $0x80                             # call the syscall
     movl $time_buf, %eax                  # push the unix time to %eax which we got from the result
-    ret
-
-  # DESCRIPTION: GETS ALL THE
-  # OVERWRITES: ALL REGISTERS
-  # RETURNS (EAX) THE CURRENT YEAR
-  # RETURNS (EBX) THE CURRENT MONTH
-  # RETURNS (ECX) THE CURRENT DAY
-  # RETURNS (EDX) THE CURRENT HOUR
-  # RETURNS (EDI) THE CURRENT MINUTE
-  get_full_date:
-    call get_unix_sec                     # get the current unix time
-
-    pushl %eax                            # copy the unix time to the stack as a temp
-    call get_current_year                 # get the year
-    popl %ebx                             # pop the unix time from the stack back to the %ebx register
-    pushl %eax                            # push the year to the stack so it sits there unharmed
-    movl %ebx, %eax                       # move the unix time back to %eax
-    pushl %eax                            # copy the unix time to the stack as a temp
-    #call get_current_month                # get the month
-    popl %ebx                             # pop the unix time from the stack back to the %ebx register
-    pushl %eax                            # push the month to the stack so it sits there unharmed
-    movl %ebx, %eax                       # move the unix time back to %eax
-    pushl %eax                            # copy the unix time to the stack as a temp
-    #call get_current_day                  # get the day
-    popl %ebx                             # pop the unix time from the stack back to the %ebx register
-    pushl %eax                            # push the day to the stack so it sits there unharmed
-    movl %ebx, %eax                       # move the unix time back to %eax
-    pushl %eax                            # copy the unix time to the stack as a temp
-    call get_current_hour                 # get the hour
-    popl %ebx                             # pop the unix time from the stack back to the %ebx register
-    pushl %eax                            # push the hour to the stack so it sits there unharmed
-    movl %ebx, %eax                       # move the unix time back to %eax
-    call get_current_minute               # get the minute
-    movl %eax, %edi                       # push the current minutes into %edi
-    popl %edx                             # push the current hours into %edx
-    popl %ecx                             # push the current days into %ecx
-    popl %ebx                             # push the current months into %ebx
-    popl %eax                             # push the current year into %eax
     ret
 
   # PARAM: (%EAX) holds current iso data-time
@@ -225,7 +230,6 @@
   # PARAM: (%EAX) holds current iso data-time
   # RETURNS: (%EAX) holds the current minute
   # OVERWRITES: %EBX, %EDX
-  # RETURNS: (%EAX) the current minute
   get_current_minute:
     # x = ((unix_time % 86400) / 60) mod 60
     movl $NUMBER_IN_DAY_INT, %ebx
@@ -239,6 +243,93 @@
     xorl %edx, %edx
     div %ebx
     movl %edx, %eax
+    ret
+
+  # PARAM: (%EAX) holds current iso data-time
+  # RETURNS: (%EAX) holds the current second
+  # OVERWRITES: %EBX, %EDX
+  get_current_second:
+    movl $SECONDS_IN_MINUTES, %ebx
+    xorl %edx, %edx
+    div %ebx
+    movl %edx, %eax
+    ret
+
+  # PARAM: (%EAX) CURRENT YEAR
+  # PARAM: (%EBX) CURRENT MONTH
+  # PARAM: (%ECX) CURRENT DAY
+  # DISCRIPTION: GET THE CURRENT DAY OF THE WEEK IN THE FORM OF A CHAR*
+  # OVERWRITES: EVERY REGISTER
+  # RETURNS: (%EAX) CHAR* TO CURRENT DAY OF THE WEEK
+  get_current_day_of_week:
+    # if month < 3: (month += 12) or: (year -= 1)
+    # x = (day + floor((13 * (month + 1)) / 5) + year + floor(year / 4) - floor(year / 100) + floor(year / 400)) % 7
+    cmpl $3, %ebx
+    jnl .month_no_month_ajust
+    addl $12, %ebx
+    dec %eax
+    .month_no_month_ajust:
+    cvtsi2sd %eax, %xmm1
+    movsd %xmm1, %xmm0
+    divsd Get_Day_Conv_Req_1, %xmm0
+    cvttsd2si %xmm0, %esi
+    movsd %xmm1, %xmm0
+    divsd Get_Day_Conv_Req_2, %xmm0
+    cvttsd2si %xmm0, %edx
+    movsd %xmm1, %xmm0
+    divsd Get_Day_Conv_Req_3, %xmm0
+    cvttsd2si %xmm0, %edi
+    addl %eax, %edi
+    subl %edx, %edi
+    addl %esi, %edi
+    movl %ecx, %eax
+    movl %edi, %ecx
+    addl $1, %ebx
+    cvtsi2sd %ebx, %xmm0
+    mulsd Get_Day_Conv_Req_5, %xmm0
+    divsd Get_Day_Conv_Req_4, %xmm0
+    cvttsd2si %xmm0, %ebx
+    addl %ecx, %ebx
+    addl %ebx, %eax
+    movl $7, %ebx
+    xorl %edx, %edx
+    div %ebx
+    dec %edx
+
+    jmp *link_day_table(,%edx,4)
+
+    link_day_table:
+      .long is_Sunday
+      .long is_Monday
+      .long is_Tuesday
+      .long is_Wednesday
+      .long is_Thursday
+      .long is_Friday
+      .long is_Saturday
+
+      is_Sunday:
+        leal Sunday_Day, %eax
+        jmp .linked_day
+      is_Monday:
+        leal Monday_Day, %eax
+        jmp .linked_day
+      is_Tuesday:
+        leal Tuesday_Day, %eax
+        jmp .linked_day
+      is_Wednesday:
+        leal Wednsday_Day, %eax
+        jmp .linked_day
+      is_Thursday:
+        leal Thursday_Day, %eax
+        jmp .linked_day
+      is_Friday:
+        leal Friday_Day, %eax
+        jmp .linked_day
+      is_Saturday:
+        leal Saturday_Day, %eax
+        jmp .linked_day
+
+    .linked_day:
     ret
 
 # set constants needed for the conversions
@@ -259,28 +350,66 @@
   Timezone_Summer_Offeset:
     .double 2.0
 
+  Get_Day_Conv_Req_1:
+    .double 400.0
+  Get_Day_Conv_Req_2:
+    .double 100.0
+  Get_Day_Conv_Req_3:
+    .double 4.0
+  Get_Day_Conv_Req_4:
+    .double 5.0
+  Get_Day_Conv_Req_5:
+    .double 13.0
+
   # month map
   January_Month:
     .asciz "January"
+    .byte 1
   February_Month:
     .asciz "February"
+    .byte 2
   March_Month:
     .asciz "March"
+    .byte 3
   April_Month:
     .asciz "April"
+    .byte 4
   May_Month:
     .asciz "May"
+    .byte 5
   June_Month:
     .asciz "June"
+    .byte 6
   July_Month:
     .asciz "July"
+    .byte 7
   August_Month:
     .asciz "August"
+    .byte 8
   September_Month:
     .asciz "September"
+    .byte 9
   October_Month:
     .asciz "October"
+    .byte 10
   November_Month:
     .asciz "November"
+    .byte 11
   December_Month:
     .asciz "December"
+    .byte 12
+
+  Sunday_Day:
+    .asciz "Sun, "
+  Monday_Day:
+    .asciz "Mon, "
+  Tuesday_Day:
+    .asciz "Tue, "
+  Wednsday_Day:
+    .asciz "Wed, "
+  Thursday_Day:
+    .asciz "Thu, "
+  Friday_Day:
+    .asciz "Fri, "
+  Saturday_Day:
+    .asciz "Sat, "

@@ -2,9 +2,6 @@
   StringLogMemory:
     .space 1024
 
-  TimeMakerMemory:
-    .space 256
-
 # PARAM (EAX) event type id
 # PARAM (EBX) event paremeter 1
 # DESCRIPTION: logs a certain server event to the console

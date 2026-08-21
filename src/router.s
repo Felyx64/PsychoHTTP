@@ -23,27 +23,193 @@
     .asciz "HTTP/1.1 500 OK\r\nContent-Type: text/html\r\n\r\n<h1>An error occured!</h1>"
   TempResponseErrorObjLen = . - TempResponseErrorObj - 1
 
+.section .bss
+  RequestTimeSetterMemory:
+    .space 256
+
+
+.section .data
+  Response_Line_Starter_And_Terminator:
+    .ascii "\r\n"
+
+  Root_Route_Reponse:
+    .ascii "HTTP/1.1 200 OK\r\n"
+    .ascii "Content-Type: text/html\r\n"
+    .ascii "Server: SpookyFunnyAssemblyServer :3\r\n"
+    .ascii "Allow: GET\r\n"
+    .ascii "Connection: close\r\n"
+    .ascii "Transfer-Encoding: chunked\r\n"
+    .asciz "Date: "
+
+  Styles_Route_Response:
+    .ascii "HTTP/1.1 200 OK\r\n"
+    .ascii "Content-Type: text/css\r\n"
+    .ascii "Server: SpookyFunnyAssemblyServer :3"
+    .ascii "Allow: GET\r\n"
+    .ascii "Connection: close\r\n"
+    .ascii "Transfer-Encoding: chunked\r\n"
+    .asciz "Date: "
+
+  GetPosts_Route_Response:
+    .ascii "HTTP/1.1 200 OK\r\n"
+    .ascii "Content-Type: application/json"
+    .ascii "Server: SpookyFunnyAssemblyServer :3"
+    .ascii "Allow: GET\r\n"
+    .ascii "Connection: close\r\n"
+    .ascii "Range: bytes=1000-1999"
+    .ascii "Transfer-Encoding: chunked\r\n"
+    .asciz "Date: "
+
+  UploadPosts_Route_Response:
+    .ascii "HTTP/1.1 200 OK\r\n"
+    .ascii "Content-Type: application/json"
+    .ascii "Server: SpookyFunnyAssemblyServer :3"
+    .ascii "Allow: POST\r\n"
+    .ascii "Connection: close\r\n"
+    .ascii "Transfer-Encoding: chunked\r\n"
+    .asciz "Date: "
+
+  Disallowed_Route_Response:
+    .ascii "HTTP/1.1 403 FORBIDDEN\r\n"
+    .ascii "Content-Type: text/html\r\n"
+    .ascii "Server: SpookyFunnyAssemblyServer :3\r\n"
+    .ascii "Allow: GET\r\n"
+    .ascii "Connection: close\r\n"
+    .ascii "Transfer-Encoding: chunked\r\n"
+    .asciz "Date: "
+
+
 .section .text
   # PARAM ($EAX) THE SERVER ROUTE CODE
   # PARAM ($EBX) PTR TO SERVER CONFIG
   # PARAM ($ECX) SERVER-FD
   RouteRequest:
-    subl $2, %eax                               # subtract 2 from %eax or else the switch wont work
-    jmp *response_table(,%eax,4)                # jump to the adress which this number correlates to on the adress table (this is the switch statement)
+    subl $2, %eax                                   # subtract 2 from %eax or else the switch wont work
+    jmp *response_table(,%eax,4)                    # jump to the adress which this number correlates to on the adress table (this is the switch statement)
 
-    response_table:                             # this is the adress table for the switch statement
-      .long is_get_root                         # if code 2 (root) this adress will be jumped to
-      .long is_get_styles                       # if code 3 (styles) this adress will be jumped to
-      .long is_get_posts                        # if code 4 (post) this adress will be jumped to
-      .long is_posts_uploadpost                 # if code 5 (upload) this adress will be jumped to
-      .long is_disallowed_request               # if code 6 (disallowed) this adress will be jumped to
+    response_table:                                 # this is the adress table for the switch statement
+      .long is_get_root                             # if code 2 (root) this adress will be jumped to
+      .long is_get_styles                           # if code 3 (styles) this adress will be jumped to
+      .long is_get_posts                            # if code 4 (post) this adress will be jumped to
+      .long is_posts_uploadpost                     # if code 5 (upload) this adress will be jumped to
+      .long is_disallowed_request                   # if code 6 (disallowed) this adress will be jumped to
 
   is_get_root:
-    #leal SCOM_Response_Creation_Table, %esi
-    #leal Root_Route_Reponse, %edi
+    pushl %ebx
+    pushl %ecx
 
-    #call String_Plot
+    call get_current_full_time
 
+    pushl %eax # secs
+    pushl %ebx # mins
+    pushl %ecx # hours
+
+    pushl %edi
+    pushl %edx
+    pushl %esi
+
+    # Get the month id from the returned month data.
+    # This data is located after the string.
+    movl %edx, %eax
+    call RunToEnd
+    inc %eax
+    movb (%eax), %cl
+    xorl %ebx, %ebx
+    movb %cl, %bl
+
+    # get the current day of the week string-chunk for the date
+    movl %edi, %eax
+    movl %esi, %ecx
+    call get_current_day_of_week
+    movl %eax, %ecx
+
+    leal SCOM_Response_Creation_Table, %esi
+    leal Root_Route_Reponse, %edi
+    call String_Plot
+
+    movl %ecx, %edi
+    call String_Plot
+
+    popl %eax
+
+    popl %eax
+    cmpl $10, %eax
+    ja .bigger_dmo_diget
+    addl $0x30, %eax
+    movb %al, (%esi)
+    inc %esi
+    jmp .assigned_dmo
+    .bigger_dmo_diget:
+    movl $10, %ebx
+    xorl %edx, %edx
+    div %ebx
+    addl $0x30, %eax
+    addl $0x30, %ebx
+    movb %al, (%esi)
+    inc %esi
+    movb %dl, (%esi)
+    inc %esi
+    .assigned_dmo:
+
+    movb $' ', (%esi)
+    inc %esi
+
+    popl %eax
+    movb (%eax), %bl
+    movb %bl, (%esi)
+    inc %esi
+    inc %eax
+    movb (%eax), %bl
+    movb %bl, (%esi)
+    inc %esi
+    inc %eax
+    movb (%eax), %bl
+    movb %bl, (%esi)
+    inc %esi
+    inc %eax
+
+    movb $' ', (%esi)
+    inc %esi
+
+    pushl %esi
+    popl %eax
+    leal TimeMakerMemory, %edi
+    call IntToString
+    popl %esi
+
+    movb (%edi), %al
+    movb %al, (%esi)
+    inc %edi
+    inc %eax
+    movb (%edi), %al
+    movb %al, (%esi)
+    inc %edi
+    inc %eax
+    movb (%edi), %al
+    movb %al, (%esi)
+    inc %edi
+    inc %eax
+    movb (%edi), %al
+    movb %al, (%esi)
+    inc %edi
+
+    movb $' ', (%esi)
+    inc %esi
+
+    popl %ecx
+    # LEFT OFF HERE ASSIGNING THE HOUR
+
+    popl %edx
+    popl %edi
+
+    popl %ebx
+    popl %ecx
+
+    # get this
+    # date: Thu, 20 Aug 2026 11:54:20 GMT
+
+    popl %ebx
+    popl %ecx
 
     # temp remove
     movl %ebx, %edi                             # move server config into edi param
@@ -100,53 +266,3 @@
 
 # SCOM_Response_Creation_Table
 # call Clear_SCOM_2048
-
-.section .data
-  Response_Line_Starter_And_Terminator:
-    .ascii "\r\n"
-
-  Root_Route_Reponse:
-    .ascii "HTTP/1.1 200 OK\r\n"
-    .ascii "Content-Type: text/html\r\n"
-    .ascii "Server: SpookyFunnyAssemblyServer :3\r\n"
-    .ascii "Allow: GET\r\n"
-    .ascii "Connection: close\r\n"
-    .ascii "Transfer-Encoding: chunked\r\n"
-    .ascii "Date:"
-
-  Styles_Route_Response:
-    .ascii "HTTP/1.1 200 OK\r\n"
-    .ascii "Content-Type: text/css\r\n"
-    .ascii "Server: SpookyFunnyAssemblyServer :3"
-    .ascii "Allow: GET\r\n"
-    .ascii "Connection: close\r\n"
-    .ascii "Transfer-Encoding: chunked\r\n"
-    .ascii "Date:"
-
-  GetPosts_Route_Response:
-    .ascii "HTTP/1.1 200 OK\r\n"
-    .ascii "Content-Type: application/json"
-    .ascii "Server: SpookyFunnyAssemblyServer :3"
-    .ascii "Allow: GET\r\n"
-    .ascii "Connection: close\r\n"
-    .ascii "Range: bytes=1000-1999"
-    .ascii "Transfer-Encoding: chunked\r\n"
-    .ascii "Date:"
-
-  UploadPosts_Route_Response:
-    .ascii "HTTP/1.1 200 OK\r\n"
-    .ascii "Content-Type: application/json"
-    .ascii "Server: SpookyFunnyAssemblyServer :3"
-    .ascii "Allow: POST\r\n"
-    .ascii "Connection: close\r\n"
-    .ascii "Transfer-Encoding: chunked\r\n"
-    .ascii "Date:"
-
-  Disallowed_Route_Response:
-    .ascii "HTTP/1.1 403 FORBIDDEN\r\n"
-    .ascii "Content-Type: text/html\r\n"
-    .ascii "Server: SpookyFunnyAssemblyServer :3\r\n"
-    .ascii "Allow: GET\r\n"
-    .ascii "Connection: close\r\n"
-    .ascii "Transfer-Encoding: chunked\r\n"
-    .ascii "Date:"

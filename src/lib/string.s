@@ -120,7 +120,7 @@
   # PARAM (%EAX) the int that needs to be converted to string
   # PARAM (%EDI) pointer to the first character of the string we need to put the number into
   # DESCRIPTION: turn int to string
-  # OVERWRITES: EBX, ESI
+  # OVERWRITES: EBX, ESI, ECX, EDX
   # RETURNS (%EDI) first char of the converted int to string
   IntToString:
     movl $10, %ebx                # move the length into the powering area of %eax
@@ -198,5 +198,37 @@
     movl %esi, %eax               # move dest to main return address
     ret                           # return
 
-  IntToStringHEX:
+  # PARAM (%EAX): CHAR* to any character
+  # DISCRIPTION: Makes the pointer run forward till it detects a \0
+  # OVERWRITES: EBX
+  # RETURNS (%EAX): Pointer to the location where it found the \0
+  RunToEnd:
+    .run_till_null_loop:
+    movb (%eax), %bl
+    cmpb $0, %bl
+    je .nullfinish_crossed
+    inc %eax
+    jmp .run_till_null_loop
+    .nullfinish_crossed:
     ret
+
+  # PARAM (%EAX): CHAR* to any character
+  # DISCRIPTION: Makes the pointer run forward till it detects a \n
+  # OVERWRITES: EBX
+  # RETURNS (%EAX): Pointer to the location where it found the \n
+  RunToNL:
+    .run_till_nl_loop:
+    movb (%eax), %bl
+    cmpb $10, %bl
+    je .nlfinish_crossed
+    inc %eax
+    jmp .run_till_nl_loop
+    .nlfinish_crossed:
+    ret
+
+  CreateResponseFracturePartition:
+    ret
+
+.section .bss
+  TimeMakerMemory:
+    .space 256
