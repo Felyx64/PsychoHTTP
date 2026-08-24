@@ -192,6 +192,9 @@
     movl $0, %eax                             # move 0 into %eax so we dont return with exit code >1
     call program_exit                         # exit the server
 
+# server router goes here
+.include "/home/f65/Documents/proj/PsychoHTTP/src/routes/root.s"
+
 # server logger goes here
 .include "/home/f65/Documents/proj/PsychoHTTP/src/logger.s"
 

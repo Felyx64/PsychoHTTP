@@ -220,7 +220,7 @@
     movsd CET_Offset_secinhour, %xmm1
     divsd %xmm1, %xmm0
     addsd Timezone_Summer_Offeset, %xmm0
-    cvtsd2si %xmm0, %eax
+    cvttsd2si %xmm0, %eax
     xorl %edx, %edx
     movl $24, %ebx
     div %ebx

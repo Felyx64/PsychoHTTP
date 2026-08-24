@@ -10,6 +10,7 @@
 - Add propper server config
 - Add Time support to the logging
 - Make Server config globally accesible via pointer in .data section
+- Make server work with daylight time savings
 
 ### potential features i can add in the future
 - CLI input
