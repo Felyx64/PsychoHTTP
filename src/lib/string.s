@@ -212,20 +212,6 @@
     .nullfinish_crossed:
     ret
 
-  # PARAM (%EAX): CHAR* to any character
-  # DISCRIPTION: Makes the pointer run forward till it detects a \n
-  # OVERWRITES: EBX
-  # RETURNS (%EAX): Pointer to the location where it found the \n
-  RunToNL:
-    .run_till_nl_loop:
-    movb (%eax), %bl
-    cmpb $10, %bl
-    je .nlfinish_crossed
-    inc %eax
-    jmp .run_till_nl_loop
-    .nlfinish_crossed:
-    ret
-
   # PARAM (%EAX) LINE OF TEXT WE NEED TO CONVERT
   # DESCRIPTION: TURNS THE PARAM STRING FOR A CHUNKED RES
   # OVERWRITES: EBX, ECX, EDX, EDI, ESI
@@ -292,6 +278,25 @@
     inc %edi
 
     ret
+
+  # PARAM (%EAX) POINTER TO THE STRING WE'RE GETTING THE LENTH OF OFF
+  # OVERWRTIES: ECX
+  # RETURNS (%EAX) LENGTH OF THE STRING
+  # RETURNS (%EBX) THE OLD POINTER PASSED IN
+  Strlen:
+    xorl %ebx, %ebx                     # clear %ebx as we're incrementing the getting the length from here
+    movl %eax, %ecx                     # backup the %eax pointer to %ecx
+    dec %eax                            # temp decrement %eax so we dont break the coming loop
+    .not_end_end_of_str_strlenlabel:    # start of get string length loop
+    inc %eax                            # increment %eax pointer
+    inc %ebx                            # increment the string length counter
+    movb (%eax), %dl                    # extract the current char we are looking at
+    cmpb $0, %dl                        # check if we reached the end of the string
+    jne .not_end_end_of_str_strlenlabel # jump back if not
+    dec %ebx                            # dec %ebx as we are not overrunning by 1
+    movl %ebx, %eax                     # move %ebx into %eax i.e the 1st return
+    movl %ecx, %ebx                     # move the beckup pointer back into %ebx i.e the 2nd return
+    ret                                 # return
 
 .section .bss
   TimeMakerMemory:

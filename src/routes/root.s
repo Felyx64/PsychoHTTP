@@ -10,8 +10,10 @@
 
 .section .text
   Handle_Root_Route_Request:
-    pushl %ebx
     pushl %ecx
+    pushl %ebx
+
+    call get_unix_sec_gmt                 # get the current unix time
 
     call get_current_full_time
 
@@ -185,24 +187,23 @@
     inc %esi
     movb $'T', (%esi)
     inc %esi
-    movb $'+', (%esi)
-    inc %esi
-    movb $'2', (%esi)
-    inc %esi
 
     leal Response_Line_Starter_And_Terminator, %edi
     call String_Plot
+    movl %eax, %esi
     leal Response_Line_Starter_And_Terminator, %edi
     call String_Plot
 
-    pushl %esi
+    # read the root html file
+    pushl %eax
     movl $3, %eax
     call Read_File_Standard
 
-    # does not do it here
-    leal SCOM_File_Read_Results, %ebx
-    leal SCOM_converted_chunked_response_data, %eax
-    .partion_responseloop:
+    # parse into chunked response here
+    leal SCOM_File_Read_Results, %ebx                 # link the file results to %ebx
+    .start_roothtml_linechunkerloop:                  # start of the converrsion loop is here
+    leal SCOM_converted_chunked_response_data, %eax   # link the conversion blob to %eax
+    .partion_responseloop:                            # start of assign to conversionblob loop
     movb (%ebx), %cl
     movb %cl, (%eax)
     inc %ebx
@@ -212,16 +213,15 @@
     cmpb $0, %cl
     je .done_paritioning_html
     jmp .partion_responseloop
-    .convert_roothtmlfile_line:
-    dec %eax
-    inc %ebx
-    movb $0, (%eax)
-    leal SCOM_converted_chunked_response_data, %eax
-    pushl %ebx
-    call CreateResponseFracturePartition
-    popl %ebx
-    popl %esi
-    .extract_converted_roothtmlchunked_loop:
+    .convert_roothtmlfile_line:                       # assign conversionblob loop ends here
+    dec %eax                                          # decrement the null newline away from the conversionblob
+    movb $0, (%eax)                                   # end the conversionblob with null terminator
+    leal SCOM_converted_chunked_response_data, %eax   # link the start back to %eax
+    pushl %ebx                                        # backup the file read results
+    call CreateResponseFracturePartition              # partition the single line on the conversionblob
+    popl %ebx                                         # get back the file results
+    popl %esi                                         # get the response object backa as well
+    .extract_converted_roothtmlchunked_loop:          # assign the converted line to the response in this loop
     movb (%eax), %cl
     movb (%esi), %dl
     movb %cl, (%esi)
@@ -229,34 +229,29 @@
     inc %esi
     cmpb $0, %cl
     jne .extract_converted_roothtmlchunked_loop
-    movb %dl, (%esi)
-
-    leal SCOM_Response_Creation_Table, %esi
-    .check_str:
-    nop
-    #pushl %esi
-    #jmp .partion_responseloop
+    dec %esi
+    pushl %esi
+    jmp .start_roothtml_linechunkerloop
     .done_paritioning_html:
-    #movb $0, (%esi)
-    #inc %esi
 
-    movl $1, %eax
-    movl $51, %ebx
-    int $0x80
+    # assign last parts of the res to the response object
+    popl %esi                                         # get the response blob back
+    movb $0x30, (%esi)                                # add char '0' i.e 0x30 to the %esi so the chunked res has an end
+    inc %esi                                          # increment the response blob
+    leal Response_Line_Starter_And_Terminator, %edi   # link the line ender to %edi
+    call String_Plot                                  # plot the line ender onto the res blob
+    inc %eax                                          # increment %eax as the res str_plot does not do that
+    movb $0, (%eax)                                   # move null terminator into the last char
 
-    popl %esi
-
-    popl %ebx
-    popl %ecx
-
-    # temp remove
-    movl %ebx, %edi                             # move server config into edi param
-    movl %ecx, %ebx                             # move server-fd into the 2nd param
-    movl $369, %eax                             # move syscall code (sendto) into %eax
-    movl $16, %ebp                              # move the server config into last param
-    movl $TempResponseRootObj, %ecx             # move response message to %ecx
-    movl $TempResponseRootObjLen, %edx          # move the response length into %edx
-    int $0x80                                   # call syscall 369 (sendto)
+    leal SCOM_Response_Creation_Table, %eax           # link start of res to %eax
+    call Strlen                                       # get total length of response
+    movl %eax, %edx                                   # move the response length into %edx
+    movl %ebx, %ecx                                   # move response message to %ecx
+    popl %edi                                         # move server config into edi param
+    popl %ebx                                         # move server-fd into the 2nd param
+    movl $369, %eax                                   # move syscall code (sendto) into %eax
+    movl $16, %ebp                                    # move the server config into last param
+    int $0x80                                         # call syscall 369 (sendto)
 
     # clear the response object
     leal SCOM_Response_Creation_Table, %eax

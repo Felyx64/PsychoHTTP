@@ -3,9 +3,9 @@
       .long 0
 
 .section .text
-  #? UNTESTED
+  # PARAM (%EAX) GET FROM UNIX TIME
   # DESCRIPTION: GETS ALL THE
-  # RETURNS (EAX-ESI) all date info
+  # RETURNS (EAX-EDI) all date info
   # EAX: SECONDS
   # EBX: MINUTE
   # ECX: HOUR
@@ -13,8 +13,6 @@
   # ESI: DAY
   # EDI: YEAR
   get_current_full_time:
-    call get_unix_sec                     # get the current unix time
-    movl (%eax), %eax                     # got the result out of the RAM
     pushl %eax                            # backup the unix time
     call get_current_year                 # get the current year
     pushl %eax                            # backup the year
@@ -45,6 +43,16 @@
     popl %edx                             # put current days to edx
     popl %esi                             # put current months to esi
     popl %edi                             # put current years to ebx
+    ret
+
+  # RETURNS (%EAX) THE CURRENT GMT OFFSET UNIX TIME
+  # OVERWRITES: %EAX, %EBX
+  # DESCRIPTION: I AM AWARE I HAVE GMT AFFSETS ALREADY IN MY CODE. BUT RELEASED THEY ARE NOT VALID FOR RESPONSES.
+  # DESCRIPTION: SO I CREATED A NEW ONE JUST FOR SO I DONT HAVE TO RE-DO EVERYTHING AND THIS FIXES EVERYTHING EASILY.
+  get_unix_sec_gmt:
+    call get_unix_sec
+    movl (%eax), %eax
+    subl $7200, %eax
     ret
 
   # RETURNS (%EAX) THE CURRENT UNIX TIME

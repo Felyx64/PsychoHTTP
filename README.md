@@ -8,10 +8,10 @@
 - Add GET request routes
 - Add POST request routes
 - Add propper server config
-- Add Time support to the logging
 - Make Server config globally accesible via pointer in .data section
 - Make server work with daylight time savings
 
 ### potential features i can add in the future
 - CLI input
 - Coloured server logs
+- Make all requests Keep-Alive rather than Close in the Connection header

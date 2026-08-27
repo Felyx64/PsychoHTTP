@@ -6,7 +6,7 @@
   # PARAMETER: ECX [CHAR*] (THE STRING ITSELF BEING PRINTEND OUT)
   # OVERWRITES: EBX, EAX, EDX, ESI
   standard_console_write:
-    movl $0, %ebx                         # Move $0 into %ESI as %ESI may be corrupt which would be bad as %ESI is used to get str leng of what is being printed out.
+    xorl %ebx, %ebx                       # Move $0 into %EBX as %EBX may be corrupt which would be bad as %ESI is used to get str leng of what is being printed out.
   _standard_print___str_leng_loop:        # starts get the str leng loop here
     movb (%ecx, %ebx), %al                # Move currently reading byte to %AL
     test %al, %al                         # check if we have hit a null-terminator (\0) in the char of string im reading
@@ -18,11 +18,11 @@
     call systemcall_console_write         # goto standard console write syscall function to write out the text
     ret
 
-  # STANDARD_CONSOLE_WRITE: NEW STANDARD CONSOLE PRINTOUT FUNCTION THUS WHY EVERYTHING HERE STARTS WITH N
+  # NSTANDARD_CONSOLE_WRITE: NEW STANDARD CONSOLE PRINTOUT FUNCTION THUS WHY EVERYTHING HERE STARTS WITH N
   # PARAMETER: EAX [CHAR*] (THE STRING ITSELF BEING PRINTEND OUT)
   nstandard_console_write:
     movl %eax, %ecx                       # move first param into %ecx
-    movl $0, %ebx                         # Move $0 into %ESI as %ESI may be corrupt which would be bad as %ESI is used to get str leng of what is being printed out.
+    xorl %ebx, %ebx                         # Move $0 into %EBX as %EBX may be corrupt which would be bad as %ESI is used to get str leng of what is being printed out.
   n_standard_print___str_leng_loop:       # starts get the str leng loop here
     movb (%ecx, %ebx), %al                # Move currently reading byte to %AL
     test %al, %al                         # check if we have hit a null-terminator (\0) in the char of string im reading
