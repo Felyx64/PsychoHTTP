@@ -1,3 +1,13 @@
+.section .data
+  Root_Route_Reponse:
+    .ascii "HTTP/1.1 200 OK\r\n"
+    .ascii "Content-Type: text/html\r\n"
+    .ascii "Server: SpookyFunnyAssemblyServer :3\r\n"
+    .ascii "Allow: GET\r\n"
+    .ascii "Connection: close\r\n"
+    .ascii "Transfer-Encoding: chunked\r\n"
+    .asciz "Date: "
+
 .section .text
   Handle_Root_Route_Request:
     pushl %ebx
@@ -185,12 +195,52 @@
     leal Response_Line_Starter_And_Terminator, %edi
     call String_Plot
 
-    movb $0, (%esi)
-    inc %esi
+    pushl %esi
+    movl $3, %eax
+    call Read_File_Standard
 
-    # date: Thu, 20 Aug 2026 11:54:20 GMT
+    # does not do it here
+    leal SCOM_File_Read_Results, %ebx
+    leal SCOM_converted_chunked_response_data, %eax
+    .partion_responseloop:
+    movb (%ebx), %cl
+    movb %cl, (%eax)
+    inc %ebx
+    inc %eax
+    cmpb $10, %cl
+    je .convert_roothtmlfile_line
+    cmpb $0, %cl
+    je .done_paritioning_html
+    jmp .partion_responseloop
+    .convert_roothtmlfile_line:
+    movb $0, (%eax)
+    leal SCOM_converted_chunked_response_data, %eax
+    inc %ebx
+    pushl %ebx
+    call CreateResponseFracturePartition
+    popl %ebx
+    popl %esi
+    leal SCOM_converted_chunked_response_data, %eax
+    .extract_converted_roothtmlchunked_loop:
+    movb (%eax), %cl
+    movb (%esi), %dl
+    movb %cl, (%esi)
+    cmpb $0, %cl
+    jne .extract_converted_roothtmlchunked_loop
+    pushl %esi
+    movb %dl, (%esi)
+    jmp .partion_responseloop
+    .done_paritioning_html:
+    #movb $0, (%esi)
+    #inc %esi
+
     #.check_str:
-    # call Clear_SCOM_2048
+
+    movl $1, %eax
+    movl $51, %ebx
+    int $0x80
+
+    popl %esi
 
     popl %ebx
     popl %ecx
@@ -206,5 +256,6 @@
 
     # clear the response object
     leal SCOM_Response_Creation_Table, %eax
-    call Clear_SCOM_2048
+    call Clear_SCOM_6144
+
     ret

@@ -5,6 +5,8 @@
     .asciz "./database.txt"
   log_fileroute:
     .asciz "./server.log"
+  home_htmlroute:
+    .asciz "./content/home.html"
   scom_maximalized_error:
     .asciz "Error: scom memory boundry hit! Please edit server src or optamize folder read."
 
@@ -13,6 +15,7 @@
   # 0 = ./config/filter.txt
   # 1 = ./database.txt
   # 2 = ./server.log
+  # 3 = ./content/home.html
 
   # DESCRIPTION: writes a log to the logfile
   # PARAM: (%EAX) pointer to the start of the string what where logging
@@ -67,7 +70,7 @@
     movl %eax, %ebx                     # move the fd we got from opening to stream to %ebx
     leal SCOM_File_Read_Results, %ecx   # make %ecx point towards the scom memory
     movl %ecx, %edi                     # copy the pointer to the scom memory
-    addl $1023, %edi                    # add 1023 to the pointer code so we dont write further than the scom memory itself
+    addl $4095, %edi                    # add 1023 to the pointer code so we dont write further than the scom memory itself
     movl $1, %edx                       # move 1 into %edx so we are always reading 1 char. Also acts as smth we can use to check if we stopeed bc scom or file space
     .read_char_loop:                    # read loop starts here
     movl $3, %eax                       # move the syscall id back into %eax so the result is overwritten
@@ -130,17 +133,22 @@
       .long is_filter_id                # for if its the filter file
       .long is_db_id                    # for if its the db file
       .long is_log_id                   # for it its the log file
+      .long is_homehtml_id              # for the home.html file
 
     is_filter_id:                       # start of function return filter file_route
-    leal filter_fileroute, %eax         # link filter file route and return
+      leal filter_fileroute, %eax       # link filter file route and return
     ret                                 # return
 
     is_db_id:                           # start of function return db file_route
-    leal db_fileroute, %eax             # link db file route and return
+      leal db_fileroute, %eax           # link db file route and return
     ret                                 # return
 
     is_log_id:                          # start of function return log file_route
-    leal log_fileroute, %eax            # link log file route and return
+      leal log_fileroute, %eax          # link log file route and return
+    ret                                 # return
+
+    is_homehtml_id:                     # start of function return html file_route
+      leal home_htmlroute, %eax         # link html file route and return
     ret                                 # return
 
   # close a potential file read stream

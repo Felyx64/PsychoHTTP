@@ -4,7 +4,104 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Welcome to my fun insanity!</title>
+    <style>
+      /* Reset and base styles */
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: Arial, sans-serif;
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+      }
+
+      /* Navigation bar */
+      nav {
+        background-color: #f0e68c; /* khaki alternative with better contrast */
+        padding: 1rem 2rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        position: sticky;
+        top: 0;
+        z-index: 100;
+      }
+
+      nav h4 {
+        margin-right: auto; /* Pushes search to the right */
+        font-weight: bold;
+      }
+
+      .search-container {
+        display: flex;
+        align-items: center;
+      }
+
+      #post_searcher {
+        padding: 0.5rem;
+        width: 200px;
+        border-radius: 4px;
+        border: 1px solid #ccc;
+        margin-left: 1rem;
+      }
+
+      /* Main content area */
+      .central_list {
+        flex: 1;
+        display: flex;
+        justify-content: center;
+        padding: 2rem;
+        background-color: #f5f5f5; /* Light gray alternative */
+      }
+
+      .post_area {
+        width: 80%;
+        max-width: 800px;
+        margin: auto;
+      }
+
+      /* Post styling */
+      .post {
+        background-color: white;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+      }
+
+      .post h3 {
+        color: #333;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 0.5rem;
+        margin-bottom: 1rem;
+        .post-content {
+           line-height: 1.6;
+         }
+    </style>
   </head>
-  <body></body>
-  <script></script>
+  <body>
+    <nav>
+      <h4>Welcome to the assembly website!</h4>
+      <div class="search-container">
+        <label for="post_searcher">Search Post</label>
+        <input type="search" id="post_searcher" name="post_searcher" placeholder="Type to search..." />
+      </div>
+    </nav>    <div class="central_list">
+      <div class="post_area">
+        <!-- Sample post - you can duplicate this structure for more posts -->
+        <article class="post">
+          <h3>First Insane Post</h3>
+          <div class="post-content">
+            <p>This is where your content goes. I've added a sample post so you have something to work with.</p>
+            <p>The layout includes proper spacing, shadows for depth, and clean typography that will make your posts look professional even when they're insane.</p>
+          </div>
+        </article>        <!-- Add more posts here following the same structure -->
+      </div>
+    </div>
+  </body>
+  <script>
+    // here we start the javascript stuff
+  </script>
 </html>

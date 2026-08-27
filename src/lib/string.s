@@ -226,9 +226,79 @@
     .nlfinish_crossed:
     ret
 
+  # PARAM (%EAX) LINE OF TEXT WE NEED TO CONVERT
+  # DESCRIPTION: TURNS THE PARAM STRING FOR A CHUNKED RES
+  # OVERWRITES: EBX, ECX, EDX, EDI, ESI
+  # RETURNS (%EAX) THE CONVERTED LINE
+  # REUTNRS (%EBX) SIGNAL IF IT IS 1: WE HIT THE END, 0 = end not hit
   CreateResponseFracturePartition:
+    xorl %ecx, %ecx
+    pushl %eax
+    .get_length:
+    movb (%eax), %bl
+    inc %eax
+    inc %ecx
+    cmpb $0, %bl
+    jne .get_length
+    dec %ecx
+    movl %ecx, %eax
+    leal ResponseFractureMemory, %edi
+    call CreateBase16Number
+    movl %edi, %esi
+    leal Response_Line_Starter_And_Terminator, %edi
+    call String_Plot
+    popl %edi
+    call String_Plot
+    leal Response_Line_Starter_And_Terminator, %edi
+    call String_Plot
+    movb $0, (%esi)
+    movl %esi, %eax
+    ret
+
+  # PARAM (%EAX) NUMBER THAT NEEDS TO BE CONVERTED TO BASE16
+  # PARAM (%EDI) CHAR* WE'RE ASSIGNING THE BASE16 TO
+  # MAX NUMBER IT CAN YEILD IS: FF/255
+  # RETURNS (%EDI) CHAR* CONTAINING THE BASE16 NUMBER ON THE BIG ENDIAN SIDE
+  CreateBase16Number:
+    # iterate over modulo-16 to get our number
+    movl $16, %ebx
+    .convert_hex_loop:
+    xorl %edx, %edx
+    div %ebx
+
+    leal Base16_Digits, %ecx
+    addl %edx, %ecx
+    movb (%ecx), %dl
+
+    cmpl $0, %eax
+    je .only_one_digitbase16
+
+    leal Base16_Digits, %ecx
+    addl %eax, %ecx
+    movb (%ecx), %bl
+
+    .check_chr:
+
+    movb %bl, (%edi)
+    inc %edi
+    movb %dl, (%edi)
+    inc %edi
+
+    ret
+    .only_one_digitbase16:
+
+    movb %dl, (%edi)
+    inc %edi
+
     ret
 
 .section .bss
   TimeMakerMemory:
     .space 256
+
+  ResponseFractureMemory:
+    .space 256
+
+.section .data
+  Base16_Digits:
+    .ascii "0123456789abcdef"

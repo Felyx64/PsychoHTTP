@@ -32,15 +32,6 @@
   Response_Line_Starter_And_Terminator:
     .asciz "\r\n"
 
-  Root_Route_Reponse:
-    .ascii "HTTP/1.1 200 OK\r\n"
-    .ascii "Content-Type: text/html\r\n"
-    .ascii "Server: SpookyFunnyAssemblyServer :3\r\n"
-    .ascii "Allow: GET\r\n"
-    .ascii "Connection: close\r\n"
-    .ascii "Transfer-Encoding: chunked\r\n"
-    .asciz "Date: "
-
   Styles_Route_Response:
     .ascii "HTTP/1.1 200 OK\r\n"
     .ascii "Content-Type: text/css\r\n"
@@ -96,7 +87,6 @@
 
   is_get_root:
     call Handle_Root_Route_Request
-
     jmp .end_sendout_res
   is_get_styles:
     movl %ebx, %edi                             # move server config into edi param

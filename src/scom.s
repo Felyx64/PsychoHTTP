@@ -8,7 +8,7 @@
     .space 1024
 
   SCOM_File_Read_Results:
-    .space 1024
+    .space 4096
 
   SCOM_File_Write_Data:
     .space 1024
@@ -17,10 +17,13 @@
     .space 512
 
   SCOM_Response_Creation_Table:
-    .space 2048
+    .space 6144
 
   GSCOM_Server_Filter:
     .space 1024
+
+  SCOM_converted_chunked_response_data:
+    .space 256
 
 .section .text
   # clears an scom if needed
@@ -39,14 +42,24 @@
   # clears an scom with 2048 size if needed
   # Param: (%eax) pointer to scom that has to be cleared
   # OVERWRITES: EBX
-  Clear_SCOM_2048:
+  Clear_SCOM_4096:
     movl %eax, %ebx       # copy scom pointer to %ebx
-    addl $2048, %ebx      # add scom's limit to %ebx
-    .clear_loop_2048:     # start clerance loop
+    addl $4096, %ebx      # add scom's limit to %ebx
+    .clear_loop_4096:     # start clerance loop
     movb $0, (%eax)       # move 0 into the scom index
     incl %eax             # increment %eax
     cmpl %ebx, %eax       # compare the max and current pointer
-    jne .clear_loop_2048  # jump back to the start of the loop if we're not done clearing'
+    jne .clear_loop_4096  # jump back to the start of the loop if we're not done clearing'
+    ret
+
+  Clear_SCOM_6144:
+    movl %eax, %ebx       # copy scom pointer to %ebx
+    addl $6144, %ebx      # add scom's limit to %ebx
+    .clear_loop_6144:     # start clerance loop
+    movb $0, (%eax)       # move 0 into the scom index
+    incl %eax             # increment %eax
+    cmpl %ebx, %eax       # compare the max and current pointer
+    jne .clear_loop_6144  # jump back to the start of the loop if we're not done clearing'
     ret
 
   # copies and pastes scom from 1 memory location to another
