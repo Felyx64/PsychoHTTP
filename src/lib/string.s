@@ -247,12 +247,13 @@
     movl %edi, %esi
     leal Response_Line_Starter_And_Terminator, %edi
     call String_Plot
+    movl %eax, %esi
     popl %edi
     call String_Plot
     leal Response_Line_Starter_And_Terminator, %edi
     call String_Plot
-    movb $0, (%esi)
-    movl %esi, %eax
+    movb $0, (%eax)
+    leal ResponseFractureMemory, %eax
     ret
 
   # PARAM (%EAX) NUMBER THAT NEEDS TO BE CONVERTED TO BASE16

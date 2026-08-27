@@ -213,28 +213,32 @@
     je .done_paritioning_html
     jmp .partion_responseloop
     .convert_roothtmlfile_line:
+    dec %eax
+    inc %ebx
     movb $0, (%eax)
     leal SCOM_converted_chunked_response_data, %eax
-    inc %ebx
     pushl %ebx
     call CreateResponseFracturePartition
     popl %ebx
     popl %esi
-    leal SCOM_converted_chunked_response_data, %eax
     .extract_converted_roothtmlchunked_loop:
     movb (%eax), %cl
     movb (%esi), %dl
     movb %cl, (%esi)
+    inc %eax
+    inc %esi
     cmpb $0, %cl
     jne .extract_converted_roothtmlchunked_loop
-    pushl %esi
     movb %dl, (%esi)
-    jmp .partion_responseloop
+
+    leal SCOM_Response_Creation_Table, %esi
+    .check_str:
+    nop
+    #pushl %esi
+    #jmp .partion_responseloop
     .done_paritioning_html:
     #movb $0, (%esi)
     #inc %esi
-
-    #.check_str:
 
     movl $1, %eax
     movl $51, %ebx
