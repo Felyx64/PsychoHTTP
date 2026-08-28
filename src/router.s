@@ -32,15 +32,6 @@
   Response_Line_Starter_And_Terminator:
     .asciz "\r\n"
 
-  Styles_Route_Response:
-    .ascii "HTTP/1.1 200 OK\r\n"
-    .ascii "Content-Type: text/css\r\n"
-    .ascii "Server: SpookyFunnyAssemblyServer :3"
-    .ascii "Allow: GET\r\n"
-    .ascii "Connection: close\r\n"
-    .ascii "Transfer-Encoding: chunked\r\n"
-    .asciz "Date: "
-
   GetPosts_Route_Response:
     .ascii "HTTP/1.1 200 OK\r\n"
     .ascii "Content-Type: application/json"
@@ -89,14 +80,7 @@
     call Handle_Root_Route_Request
     jmp .end_sendout_res
   is_get_styles:
-    movl %ebx, %edi                             # move server config into edi param
-    movl %ecx, %ebx                             # move server-fd into the 2nd param
-    movl $369, %eax                             # move syscall code (sendto) into %eax
-    movl $16, %ebp                              # move the server config into last param
-    movl $TempResponseStylesObj, %ecx           # move response message to %ecx
-    movl $TempResponseStylesObjLen, %edx        # move the response length into %edx
-    int $0x80                                   # call syscall 369 (sendto)
-
+    call Handle_Styles_Route_Request
     jmp .end_sendout_res
   is_get_posts:
     movl %ebx, %edi                             # move server config into edi param

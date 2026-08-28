@@ -141,6 +141,7 @@
 
     call Analyze_Request                      # call a function that analyses what the host is asking
 
+
     pushl %eax                                # temp backup the routecode
     movl $1, %eax                             # move the id into the 1st log param
     call Log_Message                          # trigger the logger
@@ -171,6 +172,7 @@
     popl %eax                                 # get back the routecode
     leal 4(%esp), %ebx                        # move server config into ebx 2nd param
     popl %ecx                                 # move connection fd into the %ebx second param
+
     call RouteRequest
 
     movl $1, %eax
@@ -194,6 +196,10 @@
 
 # server router goes here
 .include "/home/f65/Documents/proj/PsychoHTTP/src/routes/root.s"
+.include "/home/f65/Documents/proj/PsychoHTTP/src/routes/styles.s"
+
+# importing some response assisting code here
+.include "/home/f65/Documents/proj/PsychoHTTP/src/default_router_builder.s"
 
 # server logger goes here
 .include "/home/f65/Documents/proj/PsychoHTTP/src/logger.s"
