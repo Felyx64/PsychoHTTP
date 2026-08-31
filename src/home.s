@@ -141,7 +141,6 @@
 
     call Analyze_Request                      # call a function that analyses what the host is asking
 
-
     pushl %eax                                # temp backup the routecode
     movl $1, %eax                             # move the id into the 1st log param
     call Log_Message                          # trigger the logger
@@ -152,7 +151,7 @@
     popl %ebx                                 # move connection fd into the %ebx second param
     leal 4(%esp), %edi                        # move server config into edi param
     movl $369, %eax                           # move syscall code (sendto) into %eax
-    movl $16, %ebp                            # move the server config into last param
+    movl $16, %ebp                            # move the server config size into last param
     movl $TempResponseErrorObj, %ecx          # move response message to %ecx
     movl $TempResponseErrorObjLen, %edx       # move the response length into %edx
     int $0x80                                 # call syscall 369 (sendto)
@@ -167,12 +166,14 @@
     cmpl $0, %eax                             # look what the filter said about the request
     je .request_allowed                       # jump it request is allowed
     movl $8, %eax                             # move 8 which will become 6 if request was not allowed
+    jmp .do_route
     .request_allowed:                         # label to jump to if request is allowed
 
     popl %eax                                 # get back the routecode
     leal 4(%esp), %ebx                        # move server config into ebx 2nd param
     popl %ecx                                 # move connection fd into the %ebx second param
 
+    .do_route:
     call RouteRequest
 
     movl $1, %eax

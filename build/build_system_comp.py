@@ -81,7 +81,7 @@ class Comp_logic:
   def compile_asm_files(self):
     # org ./../src/*.s ./../src/server/*.s ./../src/lib/*.s
     compile_cmd = subprocess.run([
-      "gcc -nostdlib -msse -m32 ./../src/home.s -o ./../out/server.out"
+      "gcc -g -O0 -nostdlib -msse -m32 ./../src/home.s -o ./../out/server.out"
     ], capture_output=True, text=True, shell=True)
 
     if compile_cmd.returncode != 0:

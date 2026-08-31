@@ -207,7 +207,7 @@
     leal Response_Line_Starter_And_Terminator, %edi
     call String_Plot
 
-    # read the root html file
+    # read the original file
     pushl %eax
 
     # search in the stack from the

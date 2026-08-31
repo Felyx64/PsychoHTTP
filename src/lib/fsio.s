@@ -137,6 +137,7 @@
       .long is_db_id                    # for if its the db file
       .long is_log_id                   # for it its the log file
       .long is_homehtml_id              # for the home.html file
+      .long is_stylescss_id             # for the style.css file
 
     is_filter_id:                       # start of function return filter file_route
       leal filter_fileroute, %eax       # link filter file route and return

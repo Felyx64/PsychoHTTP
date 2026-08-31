@@ -8,7 +8,7 @@
     .ascii "Transfer-Encoding: chunked\r\n"
     .asciz "Date: "
 
-.section .data
+.section .text
   Handle_Styles_Route_Request:
     pushl %ecx
     pushl %ebx
