@@ -25,6 +25,12 @@
   SCOM_converted_chunked_response_data:
     .space 256
 
+  SCOM_extracted_json_title_data:
+    .space 65
+
+  SCOM_extracted_json_description_data:
+    .space 257
+
 .section .text
   # clears an scom if needed
   # Param: (%eax) pointer to scom that has to be cleared

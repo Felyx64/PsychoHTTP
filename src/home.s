@@ -4,6 +4,12 @@
   .type exit_handler, @function
 
   exit_handler:
+    call DisconnectDB                         # disconnect the fd if we're shutting down the server
+
+    movl $1, %ebx                             # move the message id to the 2ndlog param
+    movl $8, %eax                             # move the id into the 1st log param
+    call Log_Message                          # trigger the logger
+
     movl $1, %ebx                             # move the message id to the 2ndlog param
     movl $3, %eax                             # move the id into the 1st log param
     call Log_Message                          # trigger the logger
@@ -65,6 +71,19 @@
 
     # show initilization message
     movl $1, %ebx                             # move the message id to the 2ndlog param
+    movl $3, %eax                             # move the id into the 1st log param
+    call Log_Message                          # trigger the logger
+
+    # show message saying we're initializing the database
+    movl $6, %ebx                             # move the message id to the 2ndlog param
+    movl $3, %eax                             # move the id into the 1st log param
+    call Log_Message                          # trigger the logger
+
+    call ConnectDB                            # initialize the database fd
+    cmpl $-1, %eax                            # check for error
+    je exit_handler                           # jump if bad fd creation
+
+    movl $7, %ebx                             # move the message id to the 2ndlog param
     movl $3, %eax                             # move the id into the 1st log param
     call Log_Message                          # trigger the logger
 
@@ -176,6 +195,7 @@
     .do_route:
     call RouteRequest
 
+    #? DEV
     movl $1, %eax
     movl $99, %ebx
     int $0x80
@@ -205,6 +225,11 @@
 # server logger goes here
 .include "/home/f65/Documents/proj/PsychoHTTP/src/logger.s"
 
+# database utils go here
+.include "/home/f65/Documents/proj/PsychoHTTP/src/db/actions.s"
+.include "/home/f65/Documents/proj/PsychoHTTP/src/db/connection.s"
+.include "/home/f65/Documents/proj/PsychoHTTP/src/db/utility.s"
+
 # middleware goes here
 .include "/home/f65/Documents/proj/PsychoHTTP/src/middleware/filter_request.s"
 
@@ -221,6 +246,7 @@
 
 # interpreters go here
 .include "/home/f65/Documents/proj/PsychoHTTP/src/interpreter/filter_language.s"
+.include "/home/f65/Documents/proj/PsychoHTTP/src/interpreter/json.s"
 
 # lib goes in near bottom
 .include "/home/f65/Documents/proj/PsychoHTTP/src/lib/iostream.s"

@@ -104,16 +104,8 @@
     .bad_file_open_error:
     ret
 
-  # queries the file if db and moves queried data to scom
-  Read_File_Query:
-    ret
-
-  # writes to the database file
-  Write_File_Query:
-    ret
-
   # opens up a read file stream
-  # Param (%eax) pointer to file location
+  # Param (%eax) id of the file we are opening stream for
   # Param (%ebx) open file stream flags (optional)
   # Param (%ecx) the extra flags (optional)
   # RETURNS: (%eax) file_stream or error
@@ -164,7 +156,7 @@
   # Returns: (%eax) error-sucess code
   # OVERWRITES: EBX
   Close_File_Stream:
-    movl %eax, %eax                     # move syscall code (SYS_close) to the %eax
+    movl %eax, %ebx                     # move syscall code (SYS_close) to the %eax
     movl $6, %eax                       # pop the stack and move the readstream back into %ebx
     int $0x80                           # trigger syscall (SYS_close)
     ret

@@ -42,7 +42,7 @@
     cmovel %esi, %ebx                    # move code 3 "styles" into the temp return object if styles
     je .request_analysis_done
     movl $4, %esi                        # temp move 4 into %esi for cmovel
-    cmpb $0x70, %dl                      # check if it is p which means we are asking for a post
+    cmpb $0x70, %dl                      # check if it is 'p' which means we are asking for a post
     cmovel %esi, %ebx                    # move code 4 "posts" into the temp return object if posts
     je .request_analysis_done
 
@@ -55,7 +55,7 @@
     call Search_Path_Start               # search for the start of the request path
 
     movb (%eax, %ecx), %dl               # move into %dl the next character
-    cmpb $0x75, %dl                      # if nothing its the root path
+    cmpb $0x75, %dl                      # check if there is 'u' in the path
     movl $5, %esi                        # temp move 5 into %esi for cmovel
     cmovel %esi, %ebx                    # move code 5 "upload_post" into the temp return object if upload_post
     movl $1, %esi                        # temp move 1 into %esi for cmovnel

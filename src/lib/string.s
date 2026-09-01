@@ -264,8 +264,6 @@
     addl %eax, %ecx
     movb (%ecx), %bl
 
-    .check_chr:
-
     movb %bl, (%edi)
     inc %edi
     movb %dl, (%edi)
@@ -297,6 +295,36 @@
     movl %ebx, %eax                     # move %ebx into %eax i.e the 1st return
     movl %ecx, %ebx                     # move the beckup pointer back into %ebx i.e the 2nd return
     ret                                 # return
+
+  # PARAM: (%EAX) CHAR* WHICH WE'RE RUNNING TO THE DESIRED LOCATION
+  # DESCRIPTION: run pointer till we see \r\n\r\n
+  # OVERWRITES: EAX, BL
+  RunToEndOfReqHeader:
+    .we_at_begin_again:
+    movb (%eax), %bl
+    cmpb $'\r', %bl
+    je .found_1_desired
+    inc %eax
+    jmp .we_at_begin_again
+    .found_1_desired:
+    inc %eax
+    movb (%eax), %bl
+    cmpb $'\n', %bl
+    je .found_2_desired
+    jmp .we_at_begin_again
+    .found_2_desired:
+    inc %eax
+    movb (%eax), %bl
+    cmpb $'\r', %bl
+    je .found_final_desired
+    jmp .we_at_begin_again
+    .found_final_desired:
+    inc %eax
+    movb (%eax), %bl
+    cmpb $'\n', %bl
+    jne .we_at_begin_again
+    inc %eax
+    ret
 
 .section .bss
   TimeMakerMemory:

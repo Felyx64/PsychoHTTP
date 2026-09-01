@@ -93,8 +93,18 @@
 
     jmp .end_sendout_res
   is_posts_uploadpost:
-    movl %ebx, %edi                             # move server config into edi param
-    movl %ecx, %ebx                             # move server-fd into the 2nd param
+    pushl %ecx
+    pushl %ebx
+
+    #? NOTE: filter out all the "'s from desc before sending it to the server form the host
+    #? NULL TERMINATE THE REQUEST FOR SAFETY AND UPDATE Extract_From_Post_Json accordingly
+
+    leal SCOM_User_Server_Request, %eax
+    call RunToEndOfReqHeader
+    call Extract_From_Post_Json
+
+    popl %edi                                   # move server config into edi param
+    popl %ebx                                   # move server-fd into the 2nd param
     movl $369, %eax                             # move syscall code (sendto) into %eax
     movl $16, %ebp                              # move the server config into last param
     movl $TempResponseUploadObj, %ecx           # move response message to %ecx
