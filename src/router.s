@@ -60,7 +60,6 @@
     .ascii "Transfer-Encoding: chunked\r\n"
     .asciz "Date: "
 
-
 .section .text
   # PARAM ($EAX) THE SERVER ROUTE CODE
   # PARAM ($EBX) PTR TO SERVER CONFIG
@@ -103,13 +102,51 @@
     call RunToEndOfReqHeader
     call Extract_From_Post_Json
 
+    pushl %eax
+    movl %ebx, %eax
+    call FilterOutSeperators
+    popl %ebx
+    pushl %eax
+    movl %ebx, %eax
+    call FilterOutSeperators
+    popl %ebx
+
+    pushl %eax
+    movl %ebx, %eax
+    call FilterOutNewlines
+    popl %ebx
+    pushl %eax
+    movl %ebx, %eax
+    call FilterOutNewlines
+    popl %ebx
+
+    call Create_Database_Index
+    call Strlen
+    xchgl %eax, %ebx
+    call QueryUPLOAD_PostToDB
+    # ADD DB WRITE CHECK
+
+    leal UploadPosts_Route_Response, %eax
+    movl $6, %ebx
+    call build_response
+
+    leal SCOM_Response_Creation_Table, %eax     # link start of res to %eax
+    call Strlen                                 # get total length of response
+
+    # Sucessful_DB_Write (5)
+    movl %eax, %edx                             # move the response length into %edx
+    movl %ebx, %ecx                             # move response message to %ecx
     popl %edi                                   # move server config into edi param
     popl %ebx                                   # move server-fd into the 2nd param
     movl $369, %eax                             # move syscall code (sendto) into %eax
     movl $16, %ebp                              # move the server config into last param
-    movl $TempResponseUploadObj, %ecx           # move response message to %ecx
-    movl $TempResponseUploadObjLen, %edx        # move the response length into %edx
     int $0x80                                   # call syscall 369 (sendto)
+    jmp .end_sendout_res
+
+    #? ADD LATER
+    # Failed_DB_Write (6)
+
+    # send json response incidating sucess or failure back
 
     jmp .end_sendout_res
   is_disallowed_request:

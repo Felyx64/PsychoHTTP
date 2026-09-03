@@ -9,6 +9,10 @@
     .asciz "./content/home.html"
   styles_cssroute:
     .asciz "./content/style.css"
+  success_db_status:
+    .asciz "./content/succesful_db_status.json"
+  failed_db_status:
+    .asciz "./content/failed_db_status.json"
   scom_maximalized_error:
     .asciz "Error: scom memory boundry hit! Please edit server src or optamize folder read."
 
@@ -19,6 +23,8 @@
   # 2 = ./server.log
   # 3 = ./content/home.html
   # 4 = ./content/style.css
+  # 5 = ./content/succesful_db_status.json
+  # 6 = ./content/failed_db_status.json
 
   # DESCRIPTION: writes a log to the logfile
   # PARAM: (%EAX) pointer to the start of the string what where logging
@@ -130,6 +136,8 @@
       .long is_log_id                   # for it its the log file
       .long is_homehtml_id              # for the home.html file
       .long is_stylescss_id             # for the style.css file
+      .long is_db_status_good           # for the db_succses file
+      .long is_db_status_bad            # for the db_failed file
 
     is_filter_id:                       # start of function return filter file_route
       leal filter_fileroute, %eax       # link filter file route and return
@@ -150,6 +158,15 @@
     is_stylescss_id:                    # start of function return css file_route
       leal styles_cssroute, %eax        # link css file route and return
     ret                                 # return
+
+    is_db_status_good:                  # start of function return json file_route
+      leal success_db_status, %eax      # link json file route and return
+    ret                                 # return
+
+    is_db_status_bad:                   # start of function return json file_route
+      leal failed_db_status, %eax       # link json file route and return
+    ret                                 # return
+
 
   # close a potential file read stream
   # Param: (%eax) the file readstream itself

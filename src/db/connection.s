@@ -7,6 +7,7 @@
   # OVERWRITES: EAX, EBX, ECX
   ConnectDB:
     movl $1, %eax                 # move file id for db into param 1
+    movl $1025, %ebx              # move the propper RW flags into %ebx
     call Open_File_Stream         # open the file stream
     cmpl $-1, %eax                # check if error
     je .had_db_connection_error   # throw error if there is

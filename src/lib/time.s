@@ -83,6 +83,7 @@
   # OVERWRITES: EBX, EDX, ESI
   # RETURNS: (%EAX) holds if its a leap year or not. 0 = no_leap, 1 = leap
   check_leap_year:
+    xorl %edx, %edx
     movl $1, %ecx
     movl $0, %esi
     movl $4, %ebx

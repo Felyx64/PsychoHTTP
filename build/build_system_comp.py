@@ -62,6 +62,25 @@ class Comp_logic:
 
     self.error_code = 0
 
+  def copy_json_files(self):
+    sucess_codes = [
+      subprocess.run([
+        "cp",
+        "-a",
+        "./../src/frontend/failed_db_status.json",
+        "./../out/content/failed_db_status.json"], capture_output=True),
+      subprocess.run([
+        "cp",
+        "-a",
+        "./../src/frontend/succesful_db_status.json",
+        "./../out/content/succesful_db_status.json"], capture_output=True),
+    ]
+
+    if all(sc.returncode != 0 for sc in sucess_codes):
+      self.error_code = 1
+
+    self.error_code = 0
+
   def generate_other_files(self):
     gen_cmd = subprocess.run(
       [

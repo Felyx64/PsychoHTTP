@@ -18,6 +18,7 @@ def assemble_files():
   comp_actions.create_new_out_dirs()
   comp_actions.copy_html_code()
   comp_actions.copy_css_code()
+  comp_actions.copy_json_files()
   comp_actions.generate_other_files()
   comp_actions.compile_asm_files()
 

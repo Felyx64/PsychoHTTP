@@ -24,6 +24,8 @@
   # PARAM (%EAX) POINTER CHAR* TO THE JSON WE HAVE RECIEVED
   # OVERWRITES: ALL REGISTERS
   # DESCRIPTION: EXTRACTS THE ITEMS FRM THE POST_JSON
+  # RETURNS (%EAX): CHAR* TO THE TITLE WE GOT
+  # RETURNS (%EBX): CHAR* TO THE DESCRIPTION WE GOT
   Extract_From_Post_Json:
     addl $11, %eax                                    # add 1 to the %eax ptr so we reach the first variable
     leal SCOM_extracted_json_title_data, %ecx         # link the title to the %ecx
@@ -63,4 +65,6 @@
     jmp .extract_json_desc                            # jump to start of assign loop if not
     .got_json_desc:                                   # label means end of description assign loop
     movb $0, (%ecx)                                   # null terminate the dest end
+    leal SCOM_extracted_json_title_data, %eax         # link the title to the eax
+    leal SCOM_extracted_json_description_data, %ebx   # link the desc to the ebx
     ret                                               # return
