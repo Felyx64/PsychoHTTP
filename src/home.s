@@ -106,8 +106,6 @@
     cmpl $-1, %eax                            # check if the function returned an error
     je program_exit_opterr                    # Jump to program exit if the function returned an error
 
-    #? ADD EXTRA CONFIGS LIKE (SO_REUSEPORT)
-
     # show socket configuration message
     movl $3, %ebx                             # move the message id to the 2nd log param
     movl $3, %eax                             # move the id into the 1st log param
@@ -218,6 +216,7 @@
 # server router goes here
 .include "/home/f65/Documents/proj/PsychoHTTP/src/routes/root.s"
 .include "/home/f65/Documents/proj/PsychoHTTP/src/routes/styles.s"
+.include "/home/f65/Documents/proj/PsychoHTTP/src/routes/upload_post.s"
 
 # importing some response assisting code here
 .include "/home/f65/Documents/proj/PsychoHTTP/src/default_router_builder.s"

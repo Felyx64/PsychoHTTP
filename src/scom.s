@@ -31,6 +31,9 @@
   SCOM_extracted_json_description_data:
     .space 257
 
+  SCOM_Database_Select_Result_List:
+    .space 2400
+
 .section .text
   # clears an scom if needed
   # Param: (%eax) pointer to scom that has to be cleared

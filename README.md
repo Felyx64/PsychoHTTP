@@ -4,8 +4,8 @@
 - Add Frontend
 - Add json interpreter
 - Add GET request routes
-- Add POST request routes
 - Make server work with daylight time savings
+- Finsish the DB logger
 
 ### potential features i can add in the future
 - CLI input
@@ -16,3 +16,7 @@
 - Add multithreaded Logger service
 - Add multithreaded DB Service
 - Add delete or remove post
+- Improve the performance
+
+### Potential Long Term Plan: 
+**Fork this code and make it 64-bit and make it my own personal website. Because why not?!?!? I've already gotten this far anyway.**

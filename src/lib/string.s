@@ -180,6 +180,7 @@
 
   # PARAM (%EDI): Source Data Ptr (must be null terminated at the end)
   # PARAM (%ESI): Destination Data Ptr where to plot to
+  # OVERWRITES: EAX, EBX
   # DESCRIPTION: Plot data to the Ptr without adding a null terminator to the end
   # PARAM (%EAX): Pointer to the next to last char of the destination data
   # PARAM (%EBX): How much data was plotted to the dest
@@ -211,6 +212,21 @@
     jmp .run_till_null_loop
     .nullfinish_crossed:
     ret
+
+  # PARAM (%EAX): CHAR* to any character
+  # DISCRIPTION: Makes the pointer run forward till it detects a \n
+  # OVERWRITES: EBX
+  # RETURNS (%EAX): Pointer to the location where it found the \n
+  RunToNewLineChar:
+    .run_till_nl_loop:
+    movb (%eax), %bl
+    cmpb $10, %bl
+    je .nlfinish_crossed
+    inc %eax
+    jmp .run_till_nl_loop
+    .nlfinish_crossed:
+    ret
+
 
   # PARAM (%EAX) LINE OF TEXT WE NEED TO CONVERT
   # DESCRIPTION: TURNS THE PARAM STRING FOR A CHUNKED RES

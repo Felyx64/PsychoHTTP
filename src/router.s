@@ -27,7 +27,6 @@
   RequestTimeSetterMemory:
     .space 256
 
-
 .section .data
   Response_Line_Starter_And_Terminator:
     .asciz "\r\n"
@@ -39,15 +38,6 @@
     .ascii "Allow: GET\r\n"
     .ascii "Connection: close\r\n"
     .ascii "Range: bytes=1000-1999"
-    .ascii "Transfer-Encoding: chunked\r\n"
-    .asciz "Date: "
-
-  UploadPosts_Route_Response:
-    .ascii "HTTP/1.1 200 OK\r\n"
-    .ascii "Content-Type: application/json"
-    .ascii "Server: SpookyFunnyAssemblyServer :3"
-    .ascii "Allow: POST\r\n"
-    .ascii "Connection: close\r\n"
     .ascii "Transfer-Encoding: chunked\r\n"
     .asciz "Date: "
 
@@ -71,7 +61,7 @@
     response_table:                                 # this is the adress table for the switch statement
       .long is_get_root                             # if code 2 (root) this adress will be jumped to
       .long is_get_styles                           # if code 3 (styles) this adress will be jumped to
-      .long is_get_posts                            # if code 4 (post) this adress will be jumped to
+      .long is_post_posts                           # if code 4 (post) this adress will be jumped to
       .long is_posts_uploadpost                     # if code 5 (upload) this adress will be jumped to
       .long is_disallowed_request                   # if code 6 (disallowed) this adress will be jumped to
 
@@ -81,9 +71,23 @@
   is_get_styles:
     call Handle_Styles_Route_Request
     jmp .end_sendout_res
-  is_get_posts:
-    movl %ebx, %edi                             # move server config into edi param
-    movl %ecx, %ebx                             # move server-fd into the 2nd param
+  is_post_posts:
+    pushl %edi
+    pushl %ecx
+    leal SCOM_User_Server_Request, %eax         # link the requuest to $eax
+    call RunToEndOfReqHeader                    # move req ptr to req content
+    call Extract_From_Get_Post_Json
+    #? was gonna analyze the request here
+    #? analyzis happens later in development
+    #? add GetPosts_Route_Response b4 assigning
+    leal SCOM_Response_Creation_Table, %ebx
+    call QeurySELECT_MultiplePostsFromDB_And_PlotJSON
+
+    # get the database items
+    # send them to the host
+
+    popl %ebx                                   # move server-fd into the 2nd param
+    popl %edi                                   # move server config into edi param
     movl $369, %eax                             # move syscall code (sendto) into %eax
     movl $16, %ebp                              # move the server config into last param
     movl $TempResponsePostObj, %ecx             # move response message to %ecx
@@ -92,62 +96,7 @@
 
     jmp .end_sendout_res
   is_posts_uploadpost:
-    pushl %ecx
-    pushl %ebx
-
-    #? NOTE: filter out all the "'s from desc before sending it to the server form the host
-    #? NULL TERMINATE THE REQUEST FOR SAFETY AND UPDATE Extract_From_Post_Json accordingly
-
-    leal SCOM_User_Server_Request, %eax
-    call RunToEndOfReqHeader
-    call Extract_From_Post_Json
-
-    pushl %eax
-    movl %ebx, %eax
-    call FilterOutSeperators
-    popl %ebx
-    pushl %eax
-    movl %ebx, %eax
-    call FilterOutSeperators
-    popl %ebx
-
-    pushl %eax
-    movl %ebx, %eax
-    call FilterOutNewlines
-    popl %ebx
-    pushl %eax
-    movl %ebx, %eax
-    call FilterOutNewlines
-    popl %ebx
-
-    call Create_Database_Index
-    call Strlen
-    xchgl %eax, %ebx
-    call QueryUPLOAD_PostToDB
-    # ADD DB WRITE CHECK
-
-    leal UploadPosts_Route_Response, %eax
-    movl $6, %ebx
-    call build_response
-
-    leal SCOM_Response_Creation_Table, %eax     # link start of res to %eax
-    call Strlen                                 # get total length of response
-
-    # Sucessful_DB_Write (5)
-    movl %eax, %edx                             # move the response length into %edx
-    movl %ebx, %ecx                             # move response message to %ecx
-    popl %edi                                   # move server config into edi param
-    popl %ebx                                   # move server-fd into the 2nd param
-    movl $369, %eax                             # move syscall code (sendto) into %eax
-    movl $16, %ebp                              # move the server config into last param
-    int $0x80                                   # call syscall 369 (sendto)
-    jmp .end_sendout_res
-
-    #? ADD LATER
-    # Failed_DB_Write (6)
-
-    # send json response incidating sucess or failure back
-
+    call Handle_UploadPost_Route_Request
     jmp .end_sendout_res
   is_disallowed_request:
     movl %ebx, %edi                             # move server config into edi param
@@ -161,3 +110,10 @@
     .end_sendout_res:
 
     ret
+
+# ADD MULTITHREAD VIA THIS
+.ifdef __RELEASE__MODE__
+
+.else
+
+.endif
