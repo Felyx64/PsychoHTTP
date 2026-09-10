@@ -6,7 +6,7 @@
     .space 326
 
   GetIndex_Map:
-    .long 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    .space 44  # 44 = 4 * 10 + 4
 
 .section .data
   title_of_post_item:   #? TMP
@@ -46,18 +46,123 @@
     movl $1, %eax                 # move error code into $eax
     ret                           # return
 
+  # PARAM (%EAX) LENGTH OF DATA WE'RE SEARCHING
+  # PARAM (%EBX) CHAR* THAT POINTS TO THE END OF THE DB
+  # PARAM (%ECX) THE PAGE OF THE DB WE'RE GETTING
+  # DESCRIPTION: MAPS OUT A PART OF THE DATABASE
+  # OVERWRTES: EDX, EDI
+  # RETURNS (%EAX) RESULT FROM THE DB MAPPING (
+  #   0 = FULL PAGE GAINED
+  #   1 = PAGE DOES NOT EXIST
+  #   3 = LAST PAGE FOUND
+  # )
+  # RETURNS (%EBX) STRING WE JUST SEARCH EVERYTHING ON
+  Create_GetDBIndexMap:
+    cmpl $0, %ebx
+    je .page_not_found_return_label
+
+    pushl %eax                        # temp push the database data length to stack
+    pushl %ebx                        # temp push the database data pointer to the stack
+    # get the correct database page
+    # %ecx * 10 - 10
+    movl %ecx, %eax                   # move desired page into $eax
+    movl $10, %ebx                    # move 10 int $ebx
+    xorl %edx, %edx                   # clear out %edx to prevent errors
+    mul %ebx                          # do calculation $eax * $ebx
+    subl $9, %eax                    # remove 10 from $eax so we can get the full page
+    movl %eax, %ecx                   # move the page back into its original register
+    xorl %edi, %edi                   # clear out the $edi as the register will keep track of how many pages we already got
+    popl %eax                         # get back the database pointer
+    popl %ebx                         # get back the database lenght
+
+    .run_do_database_page:            # start searching for correct page on db
+    cmpl %edi, %ecx                   # check if we are at the correct page
+    je .got_correct_db_page           # jump if we are at the correct page
+    movb (%eax), %dl                  # if not get a char from $eax so we can check it
+    cmpb $10, %dl                     # check if its a new line
+    jne .no_page_increment            # if not: do not increment the index tracker
+    inc %edi                          # if yes: increment the page tracker
+    .no_page_increment:               # jump spot if we are not doing inc $edi
+    dec %eax                          # decrement the pointer on $eax
+    dec %ebx                          # decrement the counter on $ebx
+    cmpl $0, %ebx                     # check if we reached end of db
+    je .page_not_found_return_label   # if yes: jump to return with code 1
+    jmp .run_do_database_page         # if not: jump and keep counting it all
+    .got_correct_db_page:
+    # GET ALL INDEXES OF THE PAGE
+
+    .check_str:
+
+    cmpl $0, %ebx
+    je .page_not_found_return_label
+
+    subl $2, %ebx
+    subl $2, %eax
+    leal GetIndex_Map, %edi
+    xorl %ecx, %ecx
+    .map_page_indexes:
+    movb (%eax), %dl
+    cmpb $10, %dl
+    jne .did_not_find_entry
+    movl %eax, (%edi)
+    addl $4, %edi
+    inc %ecx
+    .did_not_find_entry:
+    dec %eax
+    dec %ebx
+    cmpl $0, %ebx
+    je .incomplete_page_return
+    cmpl $9, %ecx
+    je .got_a_full_page
+    jmp .map_page_indexes
+    .got_a_full_page:
+    movl $0, (%edi)
+    addl $4, %edi
+    movl $0, %edi
+    leal GetIndex_Map, %ecx
+    movl %eax, %ebx
+    movl $0, %eax
+    ret
+    .page_not_found_return_label:
+    movl %eax, %ebx
+    movl $1, %eax
+    ret
+    .incomplete_page_return:
+    #? DEV
+    leal GetIndex_Map, %edx
+    movl (%edx), %eax
+
+    #.check_str:
+    ret
+
+    addl $4, %edi
+    movl $0, %edi
+    leal GetIndex_Map, %ecx
+    movl %eax, %ebx
+    movl %ecx, %eax
+    movl $2, %eax
+    ret
+
   # PARAM (%EAX) WHICH PAGE OF THE DB WE'RE READING
   QueryMultipleItems:
-    pushl %eax
+    pushl %eax  # temp push back the db page number
     movl $1, %eax
     call Read_File_Standard
+    call Strlen
+    pushl %eax
+    movl %ebx, %eax
     call RunToEnd
+    movl %eax, %ebx
+    popl %eax
+    popl %ecx
+    call Create_GetDBIndexMap
+    ret
+    # ^ Create a map on this
 
     popl %ecx
     # add run to page logic
     .map_desired_db_indexes:
     movb (%eax), %bl
-    # GetIndex_Map
     cmpb $0x1E, %bl
     je .not_valid_index
     cmpb $0, %bl
@@ -76,7 +181,7 @@
     # Place them in an SCOM in a list structure
     ret
 
-  # THIS PROCEDURE GOT TOO BLOATED AND COMPLEX. TO BE REPLACED
+  #! THIS PROCEDURE GOT TOO BLOATED AND COMPLEX. TO BE REPLACED
   # (%EAX) WHICH PAGE OF THE DB NEEDS TO BE GOTTEN
   # (%EBX) POINTER OF THE JSON WE'RE PLOTTING THIS DATA ONTO
   QeurySELECT_MultiplePostsFromDB_And_PlotJSON:
@@ -111,7 +216,7 @@
     je .got_end_of_line
     jmp *extraction_procedure_table(,%esi,4)
 
-    response_table:
+    extraction_procedure_table:
       .long db_index_start_analysis # done 2 times bc we have 2 seperators
       .long add_json_entry_start
       .long title_extract
@@ -138,10 +243,10 @@
       pushl %edi
       pushl %esi
       pushl %ecx
-      leal PostTitle_Memory, %esi
+      #leal PostTitle_Memory, %esi
       leal title_of_post_item, %edi   #? TMP
       call String_Plot
-      leal PostTitle_Memory, %ebx
+      #leal PostTitle_Memory, %ebx
       popl %eax
       call Plot_Json_Object_Start
       movl %eax, %ecx
@@ -178,7 +283,6 @@
 
     movb $0, (%eax)
     leal SCOM_Response_Creation_Table, %eax
-    .check_str:
     ret
 
     # seek the page we're instead ^

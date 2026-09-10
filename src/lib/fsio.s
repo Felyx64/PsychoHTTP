@@ -71,6 +71,8 @@
   # RETURNS: (%eax) pointer to beginning of the scom data
   # USING: %EAX, %EBX, %ECX, %EDX, %ESI
   Read_File_Standard:
+    xorl %ebx, %ebx
+    xorl %ecx, %ecx
     call Open_File_Stream               # create a FileReadStream
     cmpl $-1, %eax                      # compare with -1 for error
     je  .bad_file_open_error            # jump to end of function if failed
@@ -83,30 +85,33 @@
     movl $1, %edx                       # move 1 into %edx so we are always reading 1 char. Also acts as smth we can use to check if we stopeed bc scom or file space
     .read_char_loop:                    # read loop starts here
     movl $3, %eax                       # move the syscall id back into %eax so the result is overwritten
-    int $0x80                           # engage syscall
+    int $0x80                           # engage syscall sys_read
     inc %ecx                            # increment the pointer to the scom
 
-    cmpl %edi, %ecx                     # compare the 2 pointers if we have reached scom boundry
+    cmpl $0, %eax                       # compare the 2 pointers if we have reached scom boundry
     cmovel %esi, %edx                   # move 0 into edx if we have hit end of scom memory
     je .done_reading_file               # exit the loop if we have reached the end of scom
 
-    cmpl $0, %eax                       # check if we have hit the end of the file
+    cmpl $1, %eax                       # check for error
+    jne .scom_boundry_error             # jump if error
+
+    cmpl $0, %edx                       # check if we have hit the end of the file
     jne .read_char_loop                 # exit the loop if we did hit the end of the file
     .done_reading_file:
 
     movl $0, (%ecx)                     # move null terminator to end of scom memory
 
     cmpl $0, %edx                       # this is if we hit end of scom
-    jne .not_scom_boundry               # jump if we did not hit scom boundry
-    pushl %ebx                          # temp push readstream towards the stack
+    je .not_scom_boundry                # jump if we did not hit scom boundry
+    .scom_boundry_error:                # if we have error go here
     movl $scom_maximalized_error, %eax  # move the scom max error to the %eaxmovl $1, %eax
 
     call nstandard_console_write        # report on user the scom boundry error
-    popl %eax                           # pop the stack and move the readstream back into %ebx
     .not_scom_boundry:                  # go on here if we did not hit scom boundry
 
     call Close_File_Stream              # call function to close readstream
 
+    leal SCOM_File_Read_Results, %eax   # re-link the file data so the pointer is at the start again
     .bad_file_open_error:
     ret
 

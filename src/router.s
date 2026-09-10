@@ -77,11 +77,11 @@
     leal SCOM_User_Server_Request, %eax         # link the requuest to $eax
     call RunToEndOfReqHeader                    # move req ptr to req content
     call Extract_From_Get_Post_Json
+    leal SCOM_Response_Creation_Table, %ebx
     #? was gonna analyze the request here
     #? analyzis happens later in development
     #? add GetPosts_Route_Response b4 assigning
-    leal SCOM_Response_Creation_Table, %ebx
-    call QeurySELECT_MultiplePostsFromDB_And_PlotJSON
+    call QueryMultipleItems
 
     # get the database items
     # send them to the host
