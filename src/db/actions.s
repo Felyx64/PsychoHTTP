@@ -58,8 +58,8 @@
   # )
   # RETURNS (%EBX) STRING WE JUST SEARCH EVERYTHING ON
   Create_GetDBIndexMap:
-    cmpl $0, %ebx
-    je .page_not_found_return_label
+    cmpl $0, %eax                     # check if database at least has smth in it
+    je .page_not_found_return_label   # jump to return with error if there is not
 
     pushl %eax                        # temp push the database data length to stack
     pushl %ebx                        # temp push the database data pointer to the stack
@@ -69,15 +69,17 @@
     movl $10, %ebx                    # move 10 int $ebx
     xorl %edx, %edx                   # clear out %edx to prevent errors
     mul %ebx                          # do calculation $eax * $ebx
-    subl $9, %eax                    # remove 10 from $eax so we can get the full page
+    subl $9, %eax                     # remove 10 from $eax so we can get the full page
     movl %eax, %ecx                   # move the page back into its original register
     xorl %edi, %edi                   # clear out the $edi as the register will keep track of how many pages we already got
     popl %eax                         # get back the database pointer
     popl %ebx                         # get back the database lenght
 
-    .run_do_database_page:            # start searching for correct page on db
     cmpl %edi, %ecx                   # check if we are at the correct page
     je .got_correct_db_page           # jump if we are at the correct page
+    .run_do_database_page:            # start searching for correct page on db
+    cmpl %edi, %ecx                   # check if we are at the correct page (again)
+    je .got_higher_db_page            # jump if we are at the correct page (again + different label)
     movb (%eax), %dl                  # if not get a char from $eax so we can check it
     cmpb $10, %dl                     # check if its a new line
     jne .no_page_increment            # if not: do not increment the index tracker
@@ -88,60 +90,48 @@
     cmpl $0, %ebx                     # check if we reached end of db
     je .page_not_found_return_label   # if yes: jump to return with code 1
     jmp .run_do_database_page         # if not: jump and keep counting it all
-    .got_correct_db_page:
+
+    .got_higher_db_page:              # if we are at a upper page of the db we go to this label
+    inc %ebx                          # increment both %eax, %ebx so the next subl wont break it
+    inc %eax                          # increment both %eax, %ebx so the next subl wont break it
+    .got_correct_db_page:             # if we are at first page. We go here
+    cmpl $0, %ebx                     # Check if we are not at end of db
+    jle .page_not_found_return_label  # jump if we are
+    subl $2, %ebx                     # subl both so the parsing can start
+    subl $2, %eax                     # subl both so the parsing can start
+
     # GET ALL INDEXES OF THE PAGE
-
-    .check_str:
-
-    cmpl $0, %ebx
-    je .page_not_found_return_label
-
-    subl $2, %ebx
-    subl $2, %eax
-    leal GetIndex_Map, %edi
-    xorl %ecx, %ecx
-    .map_page_indexes:
-    movb (%eax), %dl
-    cmpb $10, %dl
-    jne .did_not_find_entry
-    movl %eax, (%edi)
-    addl $4, %edi
-    inc %ecx
-    .did_not_find_entry:
-    dec %eax
-    dec %ebx
-    cmpl $0, %ebx
-    je .incomplete_page_return
-    cmpl $9, %ecx
-    je .got_a_full_page
-    jmp .map_page_indexes
-    .got_a_full_page:
-    movl $0, (%edi)
-    addl $4, %edi
-    movl $0, %edi
-    leal GetIndex_Map, %ecx
-    movl %eax, %ebx
-    movl $0, %eax
-    ret
-    .page_not_found_return_label:
-    movl %eax, %ebx
-    movl $1, %eax
-    ret
-    .incomplete_page_return:
-    #? DEV
-    leal GetIndex_Map, %edx
-    movl (%edx), %eax
-
-    #.check_str:
-    ret
-
-    addl $4, %edi
-    movl $0, %edi
-    leal GetIndex_Map, %ecx
-    movl %eax, %ebx
-    movl %ecx, %eax
-    movl $2, %eax
-    ret
+    leal GetIndex_Map, %edi           # create db page map here
+    xorl %ecx, %ecx                   # clear out %ecx as we track the limit of the db page map
+    .map_page_indexes:                # start of get db index loop
+    movb (%eax), %dl                  # move char into %dl
+    cmpb $10, %dl                     # check if new db index
+    jne .did_not_find_entry           # jump over if we did not
+    movl %eax, (%edi)                 # move db index adress into the map
+    addl $4, %edi                     # increment the map
+    inc %ecx                          # increment the db-map limiter
+    .did_not_find_entry:              # label if we are not at new index
+    dec %eax                          # decrement the db pointer
+    dec %ebx                          # decrement the db limiter
+    cmpl $0, %ebx                     # check if we are at end of db
+    je .incomplete_page_return        # Jump if we are bc we found a incomplete db adress
+    cmpl $9, %ecx                     # check if we are at the db-map limit
+    je .got_a_full_page               # jump to full page gained if we are
+    jmp .map_page_indexes             # go back to start of loop if both checks are false
+    .got_a_full_page:                 # label if we got a full page
+    leal GetIndex_Map, %ebx           # re-link the db map to return-2
+    movl $0, %eax                     # move the status into return-1
+    ret                               # return
+    .page_not_found_return_label:     # if somethign went wrong: we go here
+    movl $1, %eax                     # return the status to return-1
+    ret                               # return
+    .incomplete_page_return:          # go here if we gained an incomple map
+    movl %eax, (%edi)                 # move the last index-ptr into the map
+    addl $4, %edi                     # increment the map by 4 again
+    movl $0, (%edi)                   # move null into the map to signify the end of the map
+    leal GetIndex_Map, %ebx           # move start of map into %ebx aka return-2
+    movl $2, %eax                     # move the status into return-1
+    ret                               # return
 
   # PARAM (%EAX) WHICH PAGE OF THE DB WE'RE READING
   QueryMultipleItems:
