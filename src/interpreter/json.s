@@ -88,55 +88,193 @@
     addl %ecx, %eax
     ret
 
-    # plot ({\n)
-    # PARAM (%EAX) THE JSON WE'RE PLOTTING THE START ON
-    Plot_Basic_Json_Start:
-      movb $'{', (%eax)
-      inc %eax
-      movb $'\n', (%eax)
-      inc %eax
-      ret
+  # WRITE FUNCTIONS FROM HERE
 
-    # plot ()
-    Plot_Basic_Json_End:
-      ret
+  # plot ({\n)
+  # PARAM (%EAX) THE JSON WE'RE PLOTTING THE START ON
+  Plot_Basic_Json_Object_Start:
+    movb $'{', (%eax)
+    inc %eax
+    movb $'\n', (%eax)
+    inc %eax
+    ret
 
-    # PARAM (%EAX) THE JSON WE'RE PLOTTING THE OBJECT START ONTO
-    # PARAM (%EAX) THE OBJECT NAME IN FOROM OF CHAR*
-    # plot ("*Inserted Json Start*": {\n)
-    # RETURNS (%EAX) THE JSON WITH THE OBJECT START PUSHED ONTO IT
-    Plot_Json_Object_Start:
-      movb $0x22, (%eax)            # push to string (0x22 = ")
-      inc %eax                      # increment the char*
-      .plot_jsonitem_title_loop:    # start plot string title loop
-      movb (%ebx), %cl              # get char from source
-      cmpb $0, %cl                  # check if we are at end of source
-      je .plotted_title_itelf       # jump if we are
-      movb %cl, (%eax)              # if not: move char into the dest json
-      inc %eax                      # if not: increment both pointers
-      inc %ebx                      # if not: increment both pointers
-      jmp .plot_jsonitem_title_loop # if not: and then jump back
-      .plotted_title_itelf:         # label which we jump to if we got the title
-      movb $0x22, (%eax)            # push to string (0x22 = ")
-      inc %eax                      # increment the char*
-      movb $':', (%eax)            # push to string ":"
-      inc %eax                      # increment the char*
-      movb $' ', (%eax)             # add ' ' so we are seperating the obj begin and title
-      inc %eax                      # increment the char*
-      movb $'{', (%eax)             # add '{' to the json string
-      inc %eax                      # increment the char*
-      movb $'\n', (%eax)            # push the \n to the json string
-      inc %eax                      # increment the char*
-      ret                           # return
+  # plot (}\n)
+  # PARAM (%EAX) THE JSON WE'RE PLOTTING THE OBJ END ONTO
+  Plot_Basic_Json_Object_End:
+    movb $'}', (%eax)
+    inc %eax
+    movb $'\n', (%eax)
+    inc %eax
+    ret
 
-    Plot_Json_Object_End:
-      ret
+  # plot (},\n)
+  # PARAM (%EAX) THE JSON WE'RE PLOTTING THE OBJ COMMA END ONTO
+  Plot_Comma_Json_Object_End:
+    movb $'}', (%eax)
+    inc %eax
+    movb $',', (%eax)
+    inc %eax
+    movb $'\n', (%eax)
+    inc %eax
+    ret
 
-    # RETURNS (%EAX) THE JSON WE'RE PLOTTING THE STRING MEMBER ONTO
-    # RETURNS (%EBX) THE STRING TITLE
-    # RETURNS (%ECX) THE STRING CONTENT
-    Plot_Json_Object_String:
-      ret
+  # plot (,\n)
+  # PARAM (%EAX) THE JSON WE'RE PLOTTING THE COMMA END ONTO
+  Plot_Comma_End_Json:
+    movb $',', (%eax)
+    inc %eax
+    movb $10, (%eax)
+    inc %eax
+    ret
 
-    Plot_Comma_On_Json:
-      ret
+  # plot (\n)
+  # PARAM (%EAX) THE JSON WE'RE PLOTTING THE GENERIC END ONTO
+  Plot_Basic_End_Json:
+    movb $10, (%eax)
+    inc %eax
+    ret
+
+  # PARAM (%EAX) THE JSON WE'RE PLOTTING THE OBJECT START ONTO
+  # PARAM (%EBX) THE OBJECT NAME IN FOROM OF CHAR*
+  # plot ("*Inserted Json Start*": {\n)
+  # OVERWRITES: %ECX
+  # RETURNS (%EAX) THE JSON WITH THE OBJECT START PUSHED ONTO IT
+  Plot_Json_Object_Start:
+    movb $0x22, (%eax)            # push to string (0x22 = ")
+    inc %eax                      # increment the char*
+    .plot_jsonitem_title_loop:    # start plot string title loop
+    movb (%ebx), %cl              # get char from source
+    cmpb $0, %cl                  # check if we are at end of source
+    je .plotted_title_itelf       # jump if we are
+    movb %cl, (%eax)              # if not: move char into the dest json
+    inc %eax                      # if not: increment both pointers
+    inc %ebx                      # if not: increment both pointers
+    jmp .plot_jsonitem_title_loop # if not: and then jump back
+    .plotted_title_itelf:         # label which we jump to if we got the title
+    movb $0x22, (%eax)            # push to string (0x22 = ")
+    inc %eax                      # increment the char*
+    movb $':', (%eax)             # push to string ":"
+    inc %eax                      # increment the char*
+    movb $' ', (%eax)             # add ' ' so we are seperating the obj begin and title
+    inc %eax                      # increment the char*
+    movb $'{', (%eax)             # add '{' to the json string
+    inc %eax                      # increment the char*
+    movb $'\n', (%eax)            # push the \n to the json string
+    inc %eax                      # increment the char*
+    ret                           # return
+
+  # RETURNS (%EAX) THE JSON WE'RE PLOTTING THE STRING MEMBER ONTO
+  # RETURNS (%EBX) THE STRING TITLE
+  # RETURNS (%ECX) THE STRING CONTENT
+  Plot_Json_Object_String:
+    movb $0x22, (%eax) # plot 0x22 = "
+    inc %eax
+    pushl %ecx
+    .plot_string_title_loop:        # assign the string title
+    movb (%ebx), %cl
+    cmpb $0, %cl
+    je .setup_member_data_get_loop
+    movb %cl, (%eax)
+    inc %eax
+    inc %ebx
+    jmp .plot_jsonitem_title_loop
+    .setup_member_data_get_loop:    # assign title-content inbetween
+    popl %ebx
+    movb $0x22, (%eax)
+    inc %eax
+    movb $':', (%eax)
+    inc %eax
+    movb $' ', (%eax)
+    inc %eax
+    movb $0x22, (%eax)
+    inc %eax
+    .plot_string_memberdata_loop:   # assign the string content
+    movb (%ebx), %cl
+    cmpb $0, %cl
+    je .done_taking_data
+    movb %cl, (%eax)
+    inc %eax
+    inc %ebx
+    jmp .plot_string_memberdata_loop
+    .done_taking_data:                # we're done here
+    movb $0x22, (%eax)
+    inc %eax
+    ret
+
+  # PARAM (%EAX) THE DATABASE RESULTS WE ARE ASSIGNING TO THE JSON
+  # PARAM (%EBX) THE RESPONSE OBJECT WE'RE ASSIGNING THE JSON ONTO
+  Convert_DB_Results_To_Json:
+    pushl %ebx
+    call Plot_Basic_Json_Object_Start
+    xorl %ecx, %ecx
+    movb $'0', %cl
+    .make_database_result_json_loop:
+    pushl %ebx
+    pushl %eax
+    leal db_Item_Index_Label_Name, %edi
+    leal Database_Content_Maker_Area, %esi
+    call String_Plot
+    movb %cl, (%eax)
+    inc %eax
+    movb $0, (%eax)
+    leal Database_Content_Maker_Area, %edi
+    popl %esi
+    popl %edi # temp take out of stack
+    pushl %ecx
+    pushl %edi # push back into stack
+    leal Database_Content_Maker_Area, %edi
+    call Extract_Line_From_Blob
+    movl %ebx, %esi
+    leal Database_Content_Maker_Area, %ecx
+    leal db_index_title_characters, %ebx
+    popl %eax
+    pushl %esi
+    call Plot_Json_Object_Start
+    movl %eax, %ecx
+    popl %esi
+    leal Database_Content_Maker_Area, %edi
+    call Extract_Line_From_Blob
+    call Plot_Basic_Json_End
+    movl %ecx, %eax
+    leal Database_Content_Maker_Area, %ecx
+    leal db_index_title_characters, %ebx
+    call Plot_Json_Object_Start
+    call Plot_Basic_End_Json
+    call Plot_Comma_Json_Object_End
+    popl %ecx
+    inc %ecx
+    movb (%eax), %bl
+    cmpb $0, %bl
+    je .assigned_json_list
+    jmp .make_database_result_json_loop
+    dec %eax
+    movb $' ', (%eax)
+    inc %eax
+    call Plot_Basic_Json_Object_End
+    # then we finish off the json
+    ret
+
+    #? OLD IMPLEMENTATION
+    pushl %eax
+    leal db_Item_Index_Label_Name, %edi
+    leal Database_Index_Label_Maker_Area, %esi
+    call String_Plot
+    # ADD ID OT THE STRING
+    call Plot_Json_Object_Start
+    ret
+
+.section .bss
+  Database_Content_Maker_Area:
+    .space 260
+
+.section .data
+  db_Item_Index_Label_Name:
+    .asciz "PostID_"
+
+  db_index_title_characters:
+    .asciz "Title"
+
+  db_index_content_characters:
+    .asciz "Content"
+  # db item titles

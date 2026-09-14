@@ -77,15 +77,24 @@
     leal SCOM_User_Server_Request, %eax         # link the requuest to $eax
     call RunToEndOfReqHeader                    # move req ptr to req content
     call Extract_From_Get_Post_Json
-    leal SCOM_Response_Creation_Table, %ebx
-    #? was gonna analyze the request here
-    #? analyzis happens later in development
-    #? add GetPosts_Route_Response b4 assigning
     call QueryMultipleItems
+    cmpl $0, %eax
+    je .no_db_items
+    pushl %eax
+    leal SCOM_Response_Creation_Table, %esi
+    leal GetPosts_Route_Response, %edi
+    call String_Plot
+    # ADD DATE TO $EAX
+    # ADD REQ SEPERATOR TO $EAX
+    popl %ebx
+    pushl %eax
+    call Convert_DB_Results_To_Json
 
+    popl %ebx # GET STRING PTR BACK FOR ADDIDING THE REQ SEPERATORS
     # get the database items
     # send them to the host
 
+    .no_db_items:
     popl %ebx                                   # move server-fd into the 2nd param
     popl %edi                                   # move server config into edi param
     movl $369, %eax                             # move syscall code (sendto) into %eax

@@ -3,7 +3,7 @@
     .space 326
 
   Database_Read_Result_Data:
-    .space 326
+    .space 3140
 
   GetIndex_Map:
     .space 44  # 44 = 4 * 10 + 4
@@ -54,7 +54,7 @@
   # RETURNS (%EAX) RESULT FROM THE DB MAPPING (
   #   0 = FULL PAGE GAINED
   #   1 = PAGE DOES NOT EXIST
-  #   3 = LAST PAGE FOUND
+  #   2 = LAST PAGE FOUND
   # )
   # RETURNS (%EBX) STRING WE JUST SEARCH EVERYTHING ON
   Create_GetDBIndexMap:
@@ -134,152 +134,76 @@
     ret                               # return
 
   # PARAM (%EAX) WHICH PAGE OF THE DB WE'RE READING
+  # GET MULTIPLE ITEMS FROM THE DB AND PLOT THEM TO A TEXT RESULT
+  # OVERWRITES: ALL REGISTERS
+  # RETURNS (%EAX) EITHER 0 OR POINTER TO THE DB GET RESULTS
   QueryMultipleItems:
-    pushl %eax  # temp push back the db page number
-    movl $1, %eax
-    call Read_File_Standard
-    call Strlen
-    pushl %eax
-    movl %ebx, %eax
-    call RunToEnd
-    movl %eax, %ebx
-    popl %eax
-    popl %ecx
-    call Create_GetDBIndexMap
-    ret
-    # ^ Create a map on this
+    pushl %eax                             # temp push back the db page number
+    movl $1, %eax                          # move file_code 1 into $eax
+    call Read_File_Standard                # read the database file
+    call Strlen                            # get the length of the database
+    pushl %eax                             # temp push the length to stack
+    movl %ebx, %eax                        # move the database end to $eax
+    call RunToEnd                          # move string result db pointer to end
+    movl %eax, %ebx                        # move the file pointer to $ebx 2nd param
+    popl %eax                              # get back the db length and move it into $eax first param
+    popl %ecx                              # get back db page number and put into $ecx thrird param
+    call Create_GetDBIndexMap              # map out and find the database page
 
-    popl %ecx
-    # add run to page logic
-    .map_desired_db_indexes:
-    movb (%eax), %bl
-    cmpb $0x1E, %bl
-    je .not_valid_index
-    cmpb $0, %bl
-    je .got_all_indexes
-    cmpl $0, %ecx
-    je .got_all_indexes
-    # not and end of file (run to next record)
-    .not_valid_index:
-    call RunToNewLineChar
-    jmp .map_desired_db_indexes
-    .got_all_indexes:
-    # scan for are valid indexes
-    # write to SCOM_Database_Select_Result_List
+    cmpl $1, %eax                          # check if the search was a sucess
+    je .no_page_found                      # jump to no_page_found if we found no valid data
+    leal Database_Read_Result_Data, %eax   # link the db result block to the $eax
+    xorl %edi, %edi                        # clear out %edi
+    .make_get_db_results_loop:             # start of the get db items loop
+    movl (%ebx), %ecx                      # get a pointer item from the result map
+    addl $4, %ebx                          # increment the result map
+    cmpl $0, %ecx                          # check if pointer is null pointer
+    je .gained_results_from_db_map         # if null_ptr: jump to return with db results label
+    .run_to_title:                         # analyze first chunk of db index here
+    movb (%ecx), %dl                       # move char from db index to %dl
+    cmpb $'|', %dl                         # check for chunk seperator
+    je .read_title                         # jump to next chunk analyzer if we have found it
+    inc %ecx                               # increment db result ptr
+    jmp .run_to_title                      # jump back to begin of chunk analyzer
+    .read_title:                           # analyze second chunk of db index here
+    inc %ecx                               # increment db result ptr
+    movb (%ecx), %dl                       # move char from db index to %dl
+    cmpb $'|', %dl                         # check for chunk seperator
+    je .got_title                          # jump to next chunk analyzer if we have found it
+    movb %dl, (%eax)                       # move the database chunk item into the result
+    inc %eax                               # move the database chunk item into the result
+    jmp .read_title                        # jump back to begin of chunk analyzer
+    .got_title:                            # analyze third chunk of db index here
+    movb $10, (%eax)                       # put result seperatator into the result
+    inc %eax                               # move the database chunk item into the result
+    .run_to_desc:                          # analyze fourth chunk of db index here
+    inc %ecx                               # increment db result ptr
+    movb (%ecx), %dl                       # move char from db index to %dl
+    cmpb $'|', %dl                         # check for chunk seperator
+    je .read_desc                          # jump to next chunk analyzer if we have found it
+    jmp .run_to_desc                       # jump back to begin of chunk analyzer
+    .read_desc:                            # analyze fifth chunk of db index here
+    inc %ecx                               # increment db result ptr
+    movb (%ecx), %dl                       # move char from db index to %dl
+    cmpb $10, %dl                          # check if end of db index
+    je .got_db_index                       # jump if we are at end of db index
+    movb %dl, (%eax)                       # move the database chunk item into the result
+    inc %eax                               # increment the result pointer
+    jmp .read_desc                         # jump back to begin of chunk analyzer
+    .got_db_index:                         # analyze sixth and last chunk of db index here
+    movb $10, (%eax)                       # put result seperatator into the result
+    inc %eax                               # move the database chunk item into the result
+    inc %edi                               # increment $edi db result limiter if we hit end of db index
+    cmpl $9, %edi                          # check if db result limiter if at end
+    je .gained_results_from_db_map         # jump to return result if we are
+    jmp .make_get_db_results_loop          # go back and get another index if we are not
+    .gained_results_from_db_map:           # label if we got all db results
+    movb $0, (%eax)                        # move the end signal null terminator into $eax
+    leal Database_Read_Result_Data, %eax   # re-link the begin of the db results to $eax
+    ret                                    # return to caller
+    .no_page_found:                        # we jump to this label if we did not find valid db result
+    xorl %eax, %eax                        # clear out $eax as this means we did not get db result
+    ret                                    # return to caller
 
-    # parse all valid indexes
-    # Place them in an SCOM in a list structure
-    ret
-
-  #! THIS PROCEDURE GOT TOO BLOATED AND COMPLEX. TO BE REPLACED
-  # (%EAX) WHICH PAGE OF THE DB NEEDS TO BE GOTTEN
-  # (%EBX) POINTER OF THE JSON WE'RE PLOTTING THIS DATA ONTO
-  QeurySELECT_MultiplePostsFromDB_And_PlotJSON:
-    popl %eax
-    movl %ebx, %eax
-    call Plot_Basic_Json_Start
-    popl %edi
-    pushl %eax
-    leal db_connection_id, %ebx   # link the fp to %ebx
-    movl (%ebx), %ebx             # get the data from the pointer and make it param 1 for the next syscall
-    movl $19, %eax                # move syscall id 19 into $eax
-    movl $0, %ecx                 # make the syscall param 2 $0
-    movl $0, %edx                 # make the syscall param 3 $0 (SEEK_SET)
-    int $0x80                     # trigger syscall lseek (move fp to end of file)
-    movl %edi, %eax
-    xorl %edx, %edx
-    movl $10, %ebx
-    mul %ebx
-    movl %eax, %edi
-    movl $1, %eax
-    call Read_File_Standard
-    dec %edi
-    xorl %esi, %esi
-    popl %ecx
-    .seek_page_end:
-    movb (%eax), %bl
-    cmpb $0, %bl
-    je .found_end_of_page
-    cmpl $0, %edi
-    je .found_end_of_page
-    cmpb $10, %bl
-    je .got_end_of_line
-    jmp *extraction_procedure_table(,%esi,4)
-
-    extraction_procedure_table:
-      .long db_index_start_analysis # done 2 times bc we have 2 seperators
-      .long add_json_entry_start
-      .long title_extract
-      .long db_index_middle_analysis
-      .long desc_extraction
-
-    db_index_start_analysis:
-      cmpb $0x1E, %bl
-      je .enact_run_line_runner
-      inc %eax
-      cmpb $'|', %bl
-      jne .seek_page_end
-      inc %esi
-      jmp .seek_page_end
-      .enact_run_line_runner:
-      movb (%eax), %bl
-      cmpb $10, %bl
-      je .seek_page_end
-      inc %eax
-      jmp .enact_run_line_runner
-    add_json_entry_start:
-      # check for overwritten items on: eax, ecx, edi
-      pushl %eax
-      pushl %edi
-      pushl %esi
-      pushl %ecx
-      #leal PostTitle_Memory, %esi
-      leal title_of_post_item, %edi   #? TMP
-      call String_Plot
-      #leal PostTitle_Memory, %ebx
-      popl %eax
-      call Plot_Json_Object_Start
-      movl %eax, %ecx
-      popl %esi
-      inc %esi
-      popl %edi
-      popl %eax
-      # assign string start
-      jmp .seek_page_end
-    title_extract:
-      cmpb $'|', %bl
-      jne .seek_page_end
-      inc %esi
-      .get_char_from_title:
-      movb %bl, (%ecx)
-      jmp .seek_page_end
-    db_index_middle_analysis:
-
-      jmp .seek_page_end
-    desc_extraction:
-
-      jmp .seek_page_end
-    # do something with the char
-    # check if we got a title or desc as we're tracking that as well
-    .got_end_of_line:
-    dec %edi
-    inc %eax
-    jmp .seek_page_end
-    .found_end_of_page:
-    # read 1024 chunks at a time
-    # get 10 index lines
-
-    popl %eax # get back the writing on json data
-
-    movb $0, (%eax)
-    leal SCOM_Response_Creation_Table, %eax
-    ret
-
-    # seek the page we're instead ^
-
-
-    # returns last index in case we need to read more
-    # \x1E is deleted value
-    ret
-
+  # \x1E is deleted value
   # EXAMPLE: B|Post Title|31|Welcome the this fun post. This post is a example \n

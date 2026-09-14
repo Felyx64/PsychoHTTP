@@ -343,6 +343,27 @@
     inc %eax
     ret
 
+  # PARAM (%ESI) PTR TO THE STRING WE'RE TAKING FROM THE BLOB
+  # PARAM (%EDI) DESTINATION OF WHERE WE ARE PUTTING THE EXTRACTED STRING
+  # DESCRIPTION: EXTRACT DATA FROM %ESI AND MOVE IT INTO %EDI UNTIL WE FOUND A \n
+  # RETURNS (%EAX) DEST STRING WHERE THE TEXT LINE WAS MOVE INTO
+  # RETURNS (%EBX) POINTER TO THE DEST WE WHERE LOOKING AT
+  Extract_Line_From_Blob:
+    .take_line_from_db_result:        # start of extraction loop
+    movb (%esi), %al                  # take 1 char from source
+    cmpb $10, %al                     # check if we are at end of source
+    je .got_json_item_index_response  # jump to end of function if we are
+    movb %al, (%edi)                  # move char into dest if not
+    inc %esi                          # increment source
+    inc %edi                          # increment dest
+    jmp .take_line_from_db_result     # jump back to start
+    .got_json_item_index_response:    # label for end of function process
+    movb $0, (%edi)                   # move null terminator to end of dest string
+    inc %esi                          # increment the source so we are not looking at the /n anymore
+    movl %edi, %eax                   # move dest into $eax
+    movl %esi, %ebx                   # move source into $ebx
+    ret                               # return
+
 .section .bss
   TimeMakerMemory:
     .space 256
