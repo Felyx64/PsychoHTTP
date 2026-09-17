@@ -34,7 +34,7 @@
   SCOM_Database_Select_Result_List:
     .space 2400
 
-  TSCOM_Tempoirly_Object:
+  SCOM_json_maker_table:
     .space 2600
 
 .section .text

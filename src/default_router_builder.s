@@ -11,7 +11,7 @@
     pushl %ebx                            # push the file id to the stack
     call get_unix_sec_gmt                 # get the current unix gmt-ajusted time
 
-    call get_current_full_time # FAILS HERE FOR SOME UNKOWN REASON OUT OF NOWHERE
+    call get_current_full_time
     pushl %eax # secs
     pushl %ebx # mins
     pushl %ecx # hours

@@ -203,8 +203,11 @@
     inc %eax
     ret
 
-  # PARAM (%EAX) THE DATABASE RESULTS WE ARE ASSIGNING TO THE JSON
-  # PARAM (%EBX) THE RESPONSE OBJECT WE'RE ASSIGNING THE JSON ONTO
+  # PARAM (%EAX): THE DATABASE RESULTS WE ARE ASSIGNING TO THE JSON
+  # PARAM (%EBX): THE RESPONSE OBJECT WE'RE ASSIGNING THE JSON ONTO
+  # DESCRIPTION: CONVERT THE DB RESULTS TO A SENDABLE JSON
+  # OVERWRITES: ALL REGISTERS
+  # RETURNS (%EAX): CHAR* THAT POINTS TO WHERE %EAX WHERE ORIGINALLY WAS POINTING TOWARDS
   Convert_DB_Results_To_Json:
     pushl %ebx                              # temp push res object to stack
     xchg %eax, %ebx                         # temp swap res-obj and db-res
@@ -249,8 +252,7 @@
     popl %ecx                               # take back the index counter
     # PUSH OTHER VALS (JSON PTR = $eax & DB RESULT PTR = $esi)
     inc %cl                                 # increment the index counter
-    xorl %ebx, %ebx   #? DEV LESSENING INTERFEATANCE
-
+    movb (%esi), %bl
     cmpb $0, %bl                            # check if null which means we are at end of db results
     je .assigned_json_list                  # if we are: jump to the last conversion steps
     movl %eax, %ebx                         # if not: move $eax > $ebx (reset the ptr register locations)
@@ -263,15 +265,7 @@
     call Plot_Basic_Json_Object_End         # plot the last few chars so the json is whole made
     movb $0, (%eax)
     inc %eax
-
-    # STANDARD PRINT OUT HERE
-    leal TSCOM_Tempoirly_Object, %eax
-    call nstandard_console_write
-    .check_str:
-    movl $1, %eax
-    movl $9, %ebx
-    int $0x80
-
+    popl %eax
     ret
 
 .section .bss

@@ -217,6 +217,7 @@
 .include "/home/f65/Documents/proj/PsychoHTTP/src/routes/root.s"
 .include "/home/f65/Documents/proj/PsychoHTTP/src/routes/styles.s"
 .include "/home/f65/Documents/proj/PsychoHTTP/src/routes/upload_post.s"
+.include "/home/f65/Documents/proj/PsychoHTTP/src/routes/get_post.s"
 
 # importing some response assisting code here
 .include "/home/f65/Documents/proj/PsychoHTTP/src/default_router_builder.s"

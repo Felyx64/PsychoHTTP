@@ -31,16 +31,6 @@
   Response_Line_Starter_And_Terminator:
     .asciz "\r\n"
 
-  GetPosts_Route_Response:
-    .ascii "HTTP/1.1 200 OK\r\n"
-    .ascii "Content-Type: application/json"
-    .ascii "Server: SpookyFunnyAssemblyServer :3"
-    .ascii "Allow: GET\r\n"
-    .ascii "Connection: close\r\n"
-    .ascii "Range: bytes=1000-1999"
-    .ascii "Transfer-Encoding: chunked\r\n"
-    .asciz "Date: "
-
   Disallowed_Route_Response:
     .ascii "HTTP/1.1 403 FORBIDDEN\r\n"
     .ascii "Content-Type: text/html\r\n"
@@ -74,36 +64,33 @@
   is_post_posts:
     pushl %edi
     pushl %ecx
-    leal SCOM_User_Server_Request, %eax         # link the requuest to $eax
-    call RunToEndOfReqHeader                    # move req ptr to req content
+    leal SCOM_User_Server_Request, %eax               # link the requuest to $eax
+    call RunToEndOfReqHeader                          # move req ptr to req content
     call Extract_From_Get_Post_Json
     call QueryMultipleItems
     cmpl $0, %eax
     je .no_db_items
-    pushl %eax
-    leal SCOM_Response_Creation_Table, %esi
-    leal GetPosts_Route_Response, %edi
-    call String_Plot
-    # ADD DATE TO $EAX
-    # ADD REQ SEPERATOR TO $EAX
-    popl %ebx
-    pushl %eax
-    movl %ebx, %eax
-    leal TSCOM_Tempoirly_Object, %ebx #? TEMP
-    call Convert_DB_Results_To_Json
 
-    popl %ebx # GET STRING PTR BACK FOR ADDIDING THE REQ SEPERATORS
-    # get the database items
-    # send them to the host
+    call Handle_GetPost_Route_Request                 # handle the non-empty db and make the response here
+
+    movl %eax, %edx                                   # move response message to %ecx
+    movl %ebx, %ecx                                   # move the response length into %edx
+    popl %ebx                                         # move server-fd into the 2nd param
+    popl %edi                                         # move server config into edi param
+    movl $369, %eax                                   # move syscall code (sendto) into %eax
+    movl $16, %ebp                                    # move the server config into last param
+    int $0x80                                         # call syscall 369 (sendto)
+
+    jmp .end_sendout_res
 
     .no_db_items:
-    popl %ebx                                   # move server-fd into the 2nd param
-    popl %edi                                   # move server config into edi param
-    movl $369, %eax                             # move syscall code (sendto) into %eax
-    movl $16, %ebp                              # move the server config into last param
-    movl $TempResponsePostObj, %ecx             # move response message to %ecx
-    movl $TempResponsePostObjLen, %edx          # move the response length into %edx
-    int $0x80                                   # call syscall 369 (sendto)
+    popl %ebx                                         # move server-fd into the 2nd param
+    popl %edi                                         # move server config into edi param
+    movl $369, %eax                                   # move syscall code (sendto) into %eax
+    movl $16, %ebp                                    # move the server config into last param
+    movl $TempResponsePostObj, %ecx                   # move response message to %ecx
+    movl $TempResponsePostObjLen, %edx                # move the response length into %edx
+    int $0x80                                         # call syscall 369 (sendto)
 
     jmp .end_sendout_res
   is_posts_uploadpost:
