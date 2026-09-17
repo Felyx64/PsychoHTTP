@@ -88,6 +88,8 @@
     # ADD REQ SEPERATOR TO $EAX
     popl %ebx
     pushl %eax
+    movl %ebx, %eax
+    leal TSCOM_Tempoirly_Object, %ebx #? TEMP
     call Convert_DB_Results_To_Json
 
     popl %ebx # GET STRING PTR BACK FOR ADDIDING THE REQ SEPERATORS

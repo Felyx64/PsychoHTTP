@@ -164,11 +164,12 @@
     inc %eax                      # increment the char*
     ret                           # return
 
-  # RETURNS (%EAX) THE JSON WE'RE PLOTTING THE STRING MEMBER ONTO
-  # RETURNS (%EBX) THE STRING TITLE
-  # RETURNS (%ECX) THE STRING CONTENT
+  # PARAM (%EAX) THE JSON WE'RE PLOTTING THE STRING MEMBER ONTO
+  # PARAM (%EBX) THE STRING TITLE
+  # PARAM (%ECX) THE STRING CONTENT
+  # RETURNS (%EAX) THE JSON AFTER WE PLOTTED THE STRING ONTO IT
   Plot_Json_Object_String:
-    movb $0x22, (%eax) # plot 0x22 = "
+    movb $0x22, (%eax)              # plot 0x22 = "
     inc %eax
     pushl %ecx
     .plot_string_title_loop:        # assign the string title
@@ -178,7 +179,7 @@
     movb %cl, (%eax)
     inc %eax
     inc %ebx
-    jmp .plot_jsonitem_title_loop
+    jmp .plot_string_title_loop
     .setup_member_data_get_loop:    # assign title-content inbetween
     popl %ebx
     movb $0x22, (%eax)
@@ -205,63 +206,72 @@
   # PARAM (%EAX) THE DATABASE RESULTS WE ARE ASSIGNING TO THE JSON
   # PARAM (%EBX) THE RESPONSE OBJECT WE'RE ASSIGNING THE JSON ONTO
   Convert_DB_Results_To_Json:
-    pushl %ebx
-    call Plot_Basic_Json_Object_Start
-    xorl %ecx, %ecx
-    movb $'0', %cl
-    .make_database_result_json_loop:
-    pushl %ebx
-    pushl %eax
-    leal db_Item_Index_Label_Name, %edi
-    leal Database_Content_Maker_Area, %esi
-    call String_Plot
-    movb %cl, (%eax)
-    inc %eax
-    movb $0, (%eax)
-    leal Database_Content_Maker_Area, %edi
-    popl %esi
-    popl %edi # temp take out of stack
-    pushl %ecx
-    pushl %edi # push back into stack
-    leal Database_Content_Maker_Area, %edi
-    call Extract_Line_From_Blob
-    movl %ebx, %esi
-    leal Database_Content_Maker_Area, %ecx
-    leal db_index_title_characters, %ebx
-    popl %eax
-    pushl %esi
-    call Plot_Json_Object_Start
-    movl %eax, %ecx
-    popl %esi
-    leal Database_Content_Maker_Area, %edi
-    call Extract_Line_From_Blob
-    call Plot_Basic_Json_End
-    movl %ecx, %eax
-    leal Database_Content_Maker_Area, %ecx
-    leal db_index_title_characters, %ebx
-    call Plot_Json_Object_Start
-    call Plot_Basic_End_Json
-    call Plot_Comma_Json_Object_End
-    popl %ecx
-    inc %ecx
-    movb (%eax), %bl
-    cmpb $0, %bl
-    je .assigned_json_list
-    jmp .make_database_result_json_loop
-    dec %eax
-    movb $' ', (%eax)
-    inc %eax
-    call Plot_Basic_Json_Object_End
-    # then we finish off the json
-    ret
+    pushl %ebx                              # temp push res object to stack
+    xchg %eax, %ebx                         # temp swap res-obj and db-res
+    call Plot_Basic_Json_Object_Start       # plot the json object start to res object
+    xchg %eax, %ebx                         # swap back res-obj and db-res
+    xorl %ecx, %ecx                         # clear out %ecx from extraction safety
+    movb $'0', %cl                          # move char '0' into %cl counting db entries
+    .make_database_result_json_loop:        # start of db-res to json loop
+    pushl %ebx                              # temp backup json-write ptr
+    pushl %eax                              # temp backup the db results
+    leal db_Item_Index_Label_Name, %edi     # link the db index result to %edi
+    leal Database_Content_Maker_Area, %esi  # link the area we're writing the db index onto to %esi
+    call String_Plot                        # plot db index string to the maker area
+    movb %cl, (%eax)                        # plot the index number we're on right now and write
+    inc %eax                                # Increment the write area ptr
+    movb $0, (%eax)                         # null terminate the write area
+    popl %esi                               # take out the db results out of the stack
+    popl %eax                               # temp take result content writer out of stack
+    leal Database_Content_Maker_Area, %ebx  # re-link the index maker area to the %edi
+    pushl %ecx                              # push the index counter to the stack now
+    call Plot_Json_Object_Start             # Plot start of object to json
+    pushl %eax                              # push the response json area into stack
+    leal Database_Content_Maker_Area, %edi  # re-link database maker area again so we can start plotting again
+    call Extract_Line_From_Blob             # Extract line from the db result and plot it onto the maker area
+    movl %ebx, %esi                         # move the result maker area to %ebx
+    leal Database_Content_Maker_Area, %ecx  # re-link the repopulated json area
+    leal db_index_title_characters, %ebx    # link the title to %ebx
+    popl %eax                               # get the json writer out of the stack
+    pushl %esi                              # push the db-results back to the stack
+    call Plot_Json_Object_String            # Plot the string onto the result
+    call Plot_Comma_End_Json                # end off the json index with a comma and line end
+    movl %eax, %ecx                         # move the resulted json ptr into %ecx
+    popl %esi                               # get the db-results back out of the stack
+    leal Database_Content_Maker_Area, %edi  # re-link database maker area again so we can start plotting again
+    call Extract_Line_From_Blob             # Extract line from the db result and plot it onto the maker area
+    movl %ecx, %eax                         # move the json ptr back into $eax
+    leal Database_Content_Maker_Area, %ecx  # re-link the index content to $ecx
+    leal db_index_content_characters, %ebx  # link the title to $ebx
+    call Plot_Json_Object_String            # Plot the string member to the json
+    call Plot_Basic_End_Json                # plot just a basic end this time as we are at the index end
+    call Plot_Comma_Json_Object_End         # Plot a comma as we are at end of index but there could be more indexes
+    popl %ecx                               # take back the index counter
+    # PUSH OTHER VALS (JSON PTR = $eax & DB RESULT PTR = $esi)
+    inc %cl                                 # increment the index counter
+    xorl %ebx, %ebx   #? DEV LESSENING INTERFEATANCE
 
-    #? OLD IMPLEMENTATION
-    pushl %eax
-    leal db_Item_Index_Label_Name, %edi
-    leal Database_Index_Label_Maker_Area, %esi
-    call String_Plot
-    # ADD ID OT THE STRING
-    call Plot_Json_Object_Start
+    cmpb $0, %bl                            # check if null which means we are at end of db results
+    je .assigned_json_list                  # if we are: jump to the last conversion steps
+    movl %eax, %ebx                         # if not: move $eax > $ebx (reset the ptr register locations)
+    movl %esi, %eax                         # if not: move $esi > $eax (reset the ptr register locations)
+    jmp .make_database_result_json_loop     # if not: continue looping
+    .assigned_json_list:                    # label to jump to if we are at end of result
+    subl $2, %eax                           # decrement the json ptr
+    movb $' ', (%eax)                       # remove the comma from which the ptr should be looking at right now
+    addl $2, %eax                           # re-increment the json ptr
+    call Plot_Basic_Json_Object_End         # plot the last few chars so the json is whole made
+    movb $0, (%eax)
+    inc %eax
+
+    # STANDARD PRINT OUT HERE
+    leal TSCOM_Tempoirly_Object, %eax
+    call nstandard_console_write
+    .check_str:
+    movl $1, %eax
+    movl $9, %ebx
+    int $0x80
+
     ret
 
 .section .bss
