@@ -2,10 +2,10 @@
 
 .section .text
   Handle_Request:
-    movl %ebx, %ecx                         # move server config pointer to correctly allign function params
+    xorl %ecx, %ecx                         # leave server config params empty
     movl %eax, %ebx                         # move server fd to coorectly allign function params
     movl $364, %eax                         # move 364 to the %eax so we can syscall (accept4)
-    pushl $16                               # push size of server config to ram as required by coming syscall
+    pushl $0                                # push size 0 to ram
     movl %esp, %edx                         # create pointer in value to the stack data we just pushed %esp to edx
     movl $0, %esi                           # move 0 to the final flags paramater of syscall (accept4)
     int $0x80                               # call syscall accept4 itself

@@ -136,7 +136,7 @@
     cmpl $-1, %eax                            # check if the function returned an error
     je program_exit_servererr                 # Jump to program exit if the function returned an error
 
-    movl $0, %ecx                             # mov 0 into the %R8D register which acts as a shutdown signal
+    movl $0, %ecx                             # mov 0 into the %ECX register which acts as a shutdown signal
     pushl %ecx                                # pushes the checker if loop is done to stack. Ignore the error
 
     movl $5, %ebx                             # move the message id to the 2nd log param
@@ -146,12 +146,12 @@
     # http server handling done here
 
     .server_loop:                             # start the loop where we check for requests to the server
-    cmpl $1, %esp                             # check the shutdown signal
+    cmpl $1, (%esp)                           # check the shutdown signal
     je .start_shutdown_process                # jump to the shutdown server if we did get a signal
 
     movl 20(%esp), %eax                       # get server fd from stack as 1st param for the request
-    leal 4(%esp), %ebx                        # get the server config from the stack as second paramater
     call Handle_Request                       # wait for the request and handle stuff here
+    .dump_data:
 
     # push back from here until no longer needed
     pushl %eax
@@ -187,25 +187,22 @@
     .request_allowed:                         # label to jump to if request is allowed
 
     popl %eax                                 # get back the routecode
-    leal 4(%esp), %ebx                        # move server config into ebx 2nd param
     popl %ecx                                 # move connection fd into the %ebx second param
 
     .do_route:
+
     call RouteRequest
 
-    #? DEV
-    movl $1, %eax
-    movl $99, %ebx
-    int $0x80
-
-    cmpl $0, %eax                             # check if sendmsg had an error
-    jnl .no_sendmsg_error_found               # jump over error handling if not
-
-    .no_sendmsg_error_found:                  # jump here if no error
+    movl $373, %eax                           # move syscall code (373) to $eax
+    movl $2, %ecx                             # move SHUT_RDWR into the 2nd param of the syscall
+    # $ebx is already set
+    int $0x80                                 # call syscall (shutdown)
 
     movl $6, %eax                             # move syscall code (6) close to %eax
-    # %ebx already set to correct param
+    # $ebx is already set
     int $0x80                                 # call syscall (close)
+
+    # CLEAR REQUEST BUFFER HERE
 
     jmp .server_loop                          # jump back the the start of the loop if there we have not gotten a signal yet
     .start_shutdown_process:                  # label we need to jump to if we need to shutdown the server

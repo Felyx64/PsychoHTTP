@@ -18,6 +18,7 @@
     call build_response
 
     leal SCOM_Response_Creation_Table, %eax           # link start of res to %eax
+    .check_str:
     call Strlen                                       # get total length of response
 
     movl %eax, %edx                                   # move the response length into %edx
@@ -28,8 +29,12 @@
     movl $16, %ebp                                    # move the server config into last param
     int $0x80                                         # call syscall 369 (sendto)
 
+    pushl %ebx
+
     # clear the response object
     leal SCOM_Response_Creation_Table, %eax
     call Clear_SCOM_6144
+
+    popl %ebx
 
     ret

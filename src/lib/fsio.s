@@ -76,6 +76,7 @@
     call Open_File_Stream               # create a FileReadStream
     cmpl $-1, %eax                      # compare with -1 for error
     je  .bad_file_open_error            # jump to end of function if failed
+    pushl %eax                          # push filereadstream fd to the stack as temp
 
     movl $0, %esi                       # move 2 into %esi as a temp object needed for
     movl %eax, %ebx                     # move the fd we got from opening to stream to %ebx
@@ -109,6 +110,7 @@
     call nstandard_console_write        # report on user the scom boundry error
     .not_scom_boundry:                  # go on here if we did not hit scom boundry
 
+    popl %eax                           # get filereadstream fd back from stack
     call Close_File_Stream              # call function to close readstream
 
     leal SCOM_File_Read_Results, %eax   # re-link the file data so the pointer is at the start again

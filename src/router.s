@@ -81,6 +81,14 @@
     movl $16, %ebp                                    # move the server config into last param
     int $0x80                                         # call syscall 369 (sendto)
 
+    pushl %ebx
+
+    # clear the response object
+    leal SCOM_Response_Creation_Table, %eax
+    call Clear_SCOM_6144
+
+    popl %ebx
+
     jmp .end_sendout_res
 
     .no_db_items:
@@ -91,6 +99,14 @@
     movl $TempResponsePostObj, %ecx                   # move response message to %ecx
     movl $TempResponsePostObjLen, %edx                # move the response length into %edx
     int $0x80                                         # call syscall 369 (sendto)
+
+    pushl %ebx
+
+    # clear the response object
+    leal SCOM_Response_Creation_Table, %eax
+    call Clear_SCOM_6144
+
+    popl %ebx
 
     jmp .end_sendout_res
   is_posts_uploadpost:

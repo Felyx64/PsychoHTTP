@@ -99,6 +99,7 @@
   # OVERWRITES: EDX, ESI
   # DESCRIPTION: gets the current momth of the year
   # RETURNS: (%EAX) holds the current month of the year
+  # RETURNS: (%EBX) holds current day of the month
   get_current_daymonth:
     # get days since jan-1
     # x = floor(unix_time / 86400 - (current_year - 1970) * 365.25)
@@ -153,6 +154,7 @@
     subl %ecx, %ebx # may need to rotate the 2 subls
     subl %ebx, %eax
     call link_month
+    dec %eax
     ret
     .did_not_hit_good_month:               # if we still have not gotten the month
     addl %ecx, %ebx
