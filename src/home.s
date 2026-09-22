@@ -151,7 +151,6 @@
 
     movl 20(%esp), %eax                       # get server fd from stack as 1st param for the request
     call Handle_Request                       # wait for the request and handle stuff here
-    .dump_data:
 
     # push back from here until no longer needed
     pushl %eax
@@ -163,6 +162,8 @@
     call Log_Message                          # trigger the logger
     popl %eax                                 # get back the routecode
 
+    .dump_data:
+
     cmpl $1, %eax                             # compare if the route getter return 1 meaning its not a valid request
     jne .no_get_routeerr                      # if it is valid we check what type of request it was
     popl %ebx                                 # move connection fd into the %ebx second param
@@ -172,14 +173,13 @@
     movl $TempResponseErrorObj, %ecx          # move response message to %ecx
     movl $TempResponseErrorObjLen, %edx       # move the response length into %edx
     int $0x80                                 # call syscall 369 (sendto)
-    jmp .end_sendout_res                      # jump over switch to close the request
+    jmp .close_req                            # jump over switch to close the request
 
     .no_get_routeerr:                         # label to jump to if we had no bad request
 
     pushl %eax                                # temp backup the routecode
     call Filter_Request                       # filter the request to check if its allowed
 
-    .done_filtering:
     cmpl $0, %eax                             # look what the filter said about the request
     je .request_allowed                       # jump it request is allowed
     movl $8, %eax                             # move 8 which will become 6 if request was not allowed
@@ -192,6 +192,8 @@
     .do_route:
 
     call RouteRequest
+
+    .close_req:
 
     movl $373, %eax                           # move syscall code (373) to $eax
     movl $2, %ecx                             # move SHUT_RDWR into the 2nd param of the syscall

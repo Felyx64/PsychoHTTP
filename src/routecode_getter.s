@@ -42,7 +42,7 @@
     cmovel %esi, %ebx                    # move code 3 "styles" into the temp return object if styles
     je .request_analysis_done
 
-    movl $1, %ebx                   # move error code 1 into eax if the path is not valid
+    movl $1, %ebx                        # move error code 1 into eax if the path is not valid
 
     jmp .request_analysis_done           # jump once analysis is done
     .is_post_request:                    # we start analyzing the POST request here
@@ -54,11 +54,13 @@
     cmpb $0x75, %dl                      # check if there is 'u' in the path
     movl $5, %esi                        # temp move 5 into %esi for cmovel
     cmovel %esi, %ebx                    # move code 5 "upload_post" into the temp return object if upload_post
+    je .request_analysis_done
     movl $4, %esi                        # temp move 4 into %esi for cmovel
     cmpb $0x70, %dl                      # check if it is 'p' which means we are asking for a post
     cmovel %esi, %ebx                    # move code 4 "posts" into the temp return object if posts
-    movl $1, %esi                        # temp move 1 into %esi for cmovnel
-    cmovnel %esi, %ebx                   # move error code 1 into eax if the path is not valid
+    je .request_analysis_done
+
+    movl $1, %ebx                        # move error code 1 into eax if the path is not valid
 
     .request_analysis_done:              # label insignifies the end of the procedure
     movl %ebx, %eax                      # move the code into the %eax

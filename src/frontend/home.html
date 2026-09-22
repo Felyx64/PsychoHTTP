@@ -41,6 +41,12 @@
         border: 1px solid #ccc;
         margin-left: 1rem;
       }
+      #NewPost {
+        padding: 0.5rem;
+        width: 100px;
+        border-radius: 4px;
+        border: 1px solid #ccc;
+      }
       /* Main content area */
       .central_list {
         flex: 1;
@@ -62,6 +68,21 @@
         margin-bottom: 2rem;
         box-shadow: 0 2px 4px rgba(0,0,0,0.05);
       }
+      dialog {
+        position: static;
+        top: 45%;
+        left: 40%;
+        flex: 0;
+        padding: 10px;
+      }
+      dialog div {
+        display: grid;
+        grid-auto-flow: column;
+        margin-bottom: 4px;
+      }
+      #dummy_post {
+        visibility: none;
+      }
       .post h3 {
         color: #333;
         border-bottom: 1px solid #eee;
@@ -73,26 +94,87 @@
     </style>
   </head>
   <body>
+    <!--Site Navebar-->
     <nav>
       <h4>Welcome to the assembly website!</h4>
       <div class="search-container">
         <label for="post_searcher">Search Post</label>
         <input type="search" id="post_searcher" name="post_searcher" placeholder="Type to search..." />
+        <div style="margin-left: 75%;"></div>
+        <button style="cursor: pointer;" id="NewPost">New Post</button>
       </div>
-    </nav>    <div class="central_list">
+    </nav>
+    <!-- Site Post-feed -->
+    <div class="central_list">
       <div class="post_area">
-        <!-- Sample post - you can duplicate this structure for more posts -->
-        <article class="post">
-          <h3>First Insane Post</h3>
+        <article class="post" id="dummy_post">
+          <h3></h3>
           <div class="post-content">
-            <p>This is where your content goes. I've added a sample post so you have something to work with.</p>
-            <p>The layout includes proper spacing, shadows for depth, and clean typography that will make your posts look professional even when they're insane.</p>
+            <p></p>
           </div>
-        </article>        <!-- Add more posts here following the same structure -->
+        </article>
       </div>
     </div>
+    <!--Post Maker Popup-->
+    <dialog id="CreateNewPostDialog">
+      <div>
+        <label for="PostTitleArea">Post Title: </label>
+        <input type="text" style="margin-left: -180px; width: 187%;" id="PostTitleArea" name="PostTitleArea" />
+      </div>
+      <div>
+        <label for="PostContentArea">Post Content: </label>
+        <textarea id="PostContentArea" name="PostContentArea" rows="4" cols="50" style="resize: none;"></textarea>
+      </div>
+      <div>
+        <button id="CancelPostCreationButton">Cancel</button>
+        <button id="SendPostButton">Send Post</button>
+      </div>
+    </dialog>
+    <!--web app js is located here -->
+    <script>
+      const PostCreatorDialog = document.getElementById("CreateNewPostDialog");
+      const NewPostButton = document.getElementById("NewPost");
+      const InputtedPostTitle = document.getElementById("PostTitleArea");
+      const InputtedPostDescrip = document.getElementById("PostContentArea");
+      const NewPostTemplate = document.getElementById("dummy_post");
+      /* some stuff we do b4 the document loads up */
+      document.addEventListener("DOMContentLoaded", () => {
+        InputtedPostTitle.value = "";
+        InputtedPostDescrip.value = "";
+      });
+      /*new Promise()*/
+      /* action when create-post button is pressed */
+      NewPostButton.addEventListener("click", () => {
+        PostCreatorDialog.showModal();
+      });
+      /* action if post creation needs to be canceled */
+      document.getElementById("CancelPostCreationButton")
+      .addEventListener("click", () => {
+        PostCreatorDialog.close();
+      });
+      /* action if post creation needs to be uploaded as new post */
+      document.getElementById("SendPostButton")
+      .addEventListener("click", () => {
+        const UploadPostContent = {
+          title: InputtedPostTitle.value,
+          PostDesc: InputtedPostDescrip.value
+        };
+        const Jsonified_NewPost = JSON.stringify(UploadPostContent);
+        InputtedPostTitle.value = "";
+        InputtedPostDescrip.value = "";
+        const got_resonse_from_server = fetch(
+          "localhost:7870/u",
+          {
+            body: Jsonified_NewPost,
+            method: "POST",
+            headers: ["application/json"]
+          }
+        );
+        const server_response = await (await got_resonse_from_server).json();
+        console.log("DB_STATUS");
+        console.log(server_response);
+        PostCreatorDialog.close();
+      });
+    </script>
   </body>
-  <script>
-    // here we start the javascript stuff
-  </script>
 </html>
