@@ -8,7 +8,7 @@
     .space 1024
 
   SCOM_File_Read_Results:
-    .space 4096
+    .space 8192
 
   SCOM_File_Write_Data:
     .space 1024
@@ -51,19 +51,9 @@
     jne .clear_loop       # jump back to the start of the loop if we're not done clearing'
     ret
 
-  # clears an scom with 2048 size if needed
+  # clears an scom with 8192 size if needed
   # Param: (%eax) pointer to scom that has to be cleared
   # OVERWRITES: EBX
-  Clear_SCOM_4096:
-    movl %eax, %ebx       # copy scom pointer to %ebx
-    addl $4096, %ebx      # add scom's limit to %ebx
-    .clear_loop_4096:     # start clerance loop
-    movb $0, (%eax)       # move 0 into the scom index
-    incl %eax             # increment %eax
-    cmpl %ebx, %eax       # compare the max and current pointer
-    jne .clear_loop_4096  # jump back to the start of the loop if we're not done clearing'
-    ret
-
   Clear_SCOM_8192:
     movl %eax, %ebx       # copy scom pointer to %ebx
     addl $8192, %ebx      # add scom's limit to %ebx

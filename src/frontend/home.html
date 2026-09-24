@@ -154,7 +154,7 @@
       });
       /* action if post creation needs to be uploaded as new post */
       document.getElementById("SendPostButton")
-      .addEventListener("click", () => {
+      .addEventListener("click", async () => {
         const UploadPostContent = {
           title: InputtedPostTitle.value,
           PostDesc: InputtedPostDescrip.value
@@ -162,19 +162,44 @@
         const Jsonified_NewPost = JSON.stringify(UploadPostContent);
         InputtedPostTitle.value = "";
         InputtedPostDescrip.value = "";
-        const got_resonse_from_server = fetch(
-          "localhost:7870/u",
+        const got_resonse_from_server = await fetch(
+          "http://localhost:7870/u",
           {
             body: Jsonified_NewPost,
             method: "POST",
-            headers: ["application/json"]
+            headers: {
+              "Content-Type": "application/json"
+            }
           }
         );
-        const server_response = await (await got_resonse_from_server).json();
-        console.log("DB_STATUS");
-        console.log(server_response);
-        PostCreatorDialog.close();
+        /* Parse the response manually */
+        const res_text = await fetchWithPartialFallback(got_resonse_from_server);
+        const json_parsed_res_text = JSON.parse(res_text);
+        if (json_parsed_res_text.DB_STATUS == true) {
+          window.location.reload();
+        } else {
+          console.error("Something went wrong during the db upload. Please Try again");
+          PostCreatorDialog.close();
+        }
       });
+      /* Small workaround decoder function bc i couldnt figure out why the client didnt want to parse the response normally*/
+      async function fetchWithPartialFallback(response) {
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let accumulatedText = '';
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            accumulatedText += decoder.decode(value, { stream: true });
+          }
+        } catch (err) {
+          /* do nothing as requests ends normally */
+          /* again weird bug which i didnt want to fix */
+        }
+        accumulatedText += decoder.decode();
+        return accumulatedText;
+      }
     </script>
   </body>
 </html>

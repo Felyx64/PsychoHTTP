@@ -1,8 +1,8 @@
 .section .data
   UploadPosts_Route_Response:
     .ascii "HTTP/1.1 200 OK\r\n"
-    .ascii "Content-Type: application/json"
-    .ascii "Server: SpookyFunnyAssemblyServer :3"
+    .ascii "Content-Type: application/json\r\n"
+    .ascii "Server: SpookyFunnyAssemblyServer :3\r\n"
     .ascii "Allow: POST\r\n"
     .ascii "Connection: close\r\n"
     .ascii "Transfer-Encoding: chunked\r\n"
@@ -51,6 +51,13 @@
 
     leal SCOM_Response_Creation_Table, %eax     # link start of res to %eax
     call Strlen                                 # get total length of response
+
+    pushl %eax
+    pushl %ebx
+    movl %ebx, %eax
+    call nstandard_console_write
+    popl %ebx
+    popl %eax
 
     movl %eax, %edx                             # move the response length into %edx
     movl %ebx, %ecx                             # move response message to %ecx
