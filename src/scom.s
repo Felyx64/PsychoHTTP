@@ -17,7 +17,7 @@
     .space 512
 
   SCOM_Response_Creation_Table:
-    .space 6144
+    .space 8192
 
   GSCOM_Server_Filter:
     .space 1024
@@ -64,14 +64,14 @@
     jne .clear_loop_4096  # jump back to the start of the loop if we're not done clearing'
     ret
 
-  Clear_SCOM_6144:
+  Clear_SCOM_8192:
     movl %eax, %ebx       # copy scom pointer to %ebx
-    addl $6144, %ebx      # add scom's limit to %ebx
-    .clear_loop_6144:     # start clerance loop
+    addl $8192, %ebx      # add scom's limit to %ebx
+    .clear_loop_8192:     # start clerance loop
     movb $0, (%eax)       # move 0 into the scom index
     incl %eax             # increment %eax
     cmpl %ebx, %eax       # compare the max and current pointer
-    jne .clear_loop_6144  # jump back to the start of the loop if we're not done clearing'
+    jne .clear_loop_8192  # jump back to the start of the loop if we're not done clearing'
     ret
 
   # copies and pastes scom from 1 memory location to another

@@ -162,8 +162,6 @@
     call Log_Message                          # trigger the logger
     popl %eax                                 # get back the routecode
 
-    .dump_data:
-
     cmpl $1, %eax                             # compare if the route getter return 1 meaning its not a valid request
     jne .no_get_routeerr                      # if it is valid we check what type of request it was
     popl %ebx                                 # move connection fd into the %ebx second param
@@ -183,13 +181,13 @@
     cmpl $0, %eax                             # look what the filter said about the request
     je .request_allowed                       # jump it request is allowed
     movl $8, %eax                             # move 8 which will become 6 if request was not allowed
+    addl $4, %esp                             # lower the stack pointer to invalidate the routecode
     jmp .do_route
     .request_allowed:                         # label to jump to if request is allowed
 
     popl %eax                                 # get back the routecode
-    popl %ecx                                 # move connection fd into the %ebx second param
-
     .do_route:
+    popl %ecx                                 # move connection fd into the %ebx second param
 
     call RouteRequest
 

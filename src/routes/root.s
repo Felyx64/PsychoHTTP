@@ -18,7 +18,6 @@
     call build_response
 
     leal SCOM_Response_Creation_Table, %eax           # link start of res to %eax
-    .check_str:
     call Strlen                                       # get total length of response
 
     movl %eax, %edx                                   # move the response length into %edx
@@ -33,7 +32,7 @@
 
     # clear the response object
     leal SCOM_Response_Creation_Table, %eax
-    call Clear_SCOM_6144
+    call Clear_SCOM_8192
 
     popl %ebx
 

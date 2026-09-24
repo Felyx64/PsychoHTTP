@@ -85,7 +85,7 @@
 
     # clear the response object
     leal SCOM_Response_Creation_Table, %eax
-    call Clear_SCOM_6144
+    call Clear_SCOM_8192
 
     popl %ebx
 
@@ -104,7 +104,7 @@
 
     # clear the response object
     leal SCOM_Response_Creation_Table, %eax
-    call Clear_SCOM_6144
+    call Clear_SCOM_8192
 
     popl %ebx
 
