@@ -32,7 +32,7 @@
 
     # clear the response object
     leal SCOM_Response_Creation_Table, %eax
-    call Clear_SCOM_8192
+    call Clear_SCOM_12288
 
     popl %ebx
 

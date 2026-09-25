@@ -80,9 +80,6 @@
         grid-auto-flow: column;
         margin-bottom: 4px;
       }
-      #dummy_post {
-        visibility: none;
-      }
       .post h3 {
         color: #333;
         border-bottom: 1px solid #eee;
@@ -106,13 +103,7 @@
     </nav>
     <!-- Site Post-feed -->
     <div class="central_list">
-      <div class="post_area">
-        <article class="post" id="dummy_post">
-          <h3></h3>
-          <div class="post-content">
-            <p></p>
-          </div>
-        </article>
+      <div class="post_area" id="Post_List_Area">
       </div>
     </div>
     <!--Post Maker Popup-->
@@ -129,6 +120,14 @@
         <button id="CancelPostCreationButton">Cancel</button>
         <button id="SendPostButton">Send Post</button>
       </div>
+      <template>
+        <article class="post" id="dummy_post">
+          <h3></h3>
+          <div class="post-content">
+            <p></p>
+          </div>
+        </article>
+      </template>
     </dialog>
     <!--web app js is located here -->
     <script>
@@ -136,13 +135,41 @@
       const NewPostButton = document.getElementById("NewPost");
       const InputtedPostTitle = document.getElementById("PostTitleArea");
       const InputtedPostDescrip = document.getElementById("PostContentArea");
+      const PlotPostArea = document.getElementById("Post_List_Area");
+      /* var contains template for new post */
       const NewPostTemplate = document.getElementById("dummy_post");
+      /* maps database result indexes to numbers */
+      const db_index_map = [
+        "PostID_0",
+        "PostID_1",
+        "PostID_2",
+        "PostID_3",
+        "PostID_4",
+        "PostID_5",
+        "PostID_6",
+        "PostID_7",
+        "PostID_8",
+        "PostID_9",
+      ];
+      /* Track which page we are on */
+      let current_page = 1;
+      let allow_more_reqs = true;
       /* some stuff we do b4 the document loads up */
       document.addEventListener("DOMContentLoaded", () => {
         InputtedPostTitle.value = "";
         InputtedPostDescrip.value = "";
+        new Promise(async (resolve, reject) => {
+          const got_from_db = await get_page_from_backend();
+          if (got_from_db == "EODB") {
+            console.log("You have reached end of db");
+            return;
+          } else {
+            Plot_db_items(got_from_db)
+            /* Here we plot and push the new items from the db */
+          }
+          resolve();
+        })
       });
-      /*new Promise()*/
       /* action when create-post button is pressed */
       NewPostButton.addEventListener("click", () => {
         PostCreatorDialog.showModal();
@@ -182,6 +209,7 @@
           PostCreatorDialog.close();
         }
       });
+      /* function to parse my response */
       /* Small workaround decoder function bc i couldnt figure out why the client didnt want to parse the response normally*/
       async function fetchWithPartialFallback(response) {
         const reader = response.body.getReader();
@@ -199,6 +227,51 @@
         }
         accumulatedText += decoder.decode();
         return accumulatedText;
+      }
+      /* function gets a page from the db */
+      async function get_page_from_backend() {
+        if (allow_more_reqs == false) { return "EODB"; }
+        const get_page_request_body = JSON.stringify({
+          get_post_from_page: current_page
+        });
+        const got_page_response = await fetch(
+          "http://localhost:7870/p",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: get_page_request_body
+          }
+        );
+        const stringified_post_list = await fetchWithPartialFallback(got_page_response);
+        if (stringified_post_list == "<h1>DB_END_REACHED</h1>") {
+          allow_more_reqs = false;
+          return "EODB";
+        } else {
+          return stringified_post_list;
+          current_page++;
+        };
+      }
+      /* fucntion plots database results from db to the post feed */
+      function Plot_db_items(plot_items) {
+        console.log(JSON.parse(plot_items));
+        db_index_map.forEach(item_name => {
+          if (typeof plot_items[item_name] == "object") {
+            plot_post(plot_items[item_name].Title, plot_items[item_name].Content);
+          } else {
+            return;
+          }
+        })
+        return;
+        /* interate over -db_index_map- */
+      };
+      /* makes an empty post for the post feed and places it */
+      function plot_post(title, content) {
+        const Created_Unplotted_Post = NewPostTemplate;
+        Created_Unplotted_Post.querySelector('h3').textContent = title;
+        Created_Unplotted_Post.querySelector('p').textContent = content;
+        PlotPostArea.appendChild(Created_Unplotted_Post);
       }
     </script>
   </body>

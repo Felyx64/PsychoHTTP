@@ -71,7 +71,7 @@
   # RETURNS (%EAX) THE NUMBER WE PARSED OUT OF THE JSON
   Extract_From_Get_Post_Json:
     xorl %ecx, %ecx
-    addl $23, %eax
+    addl $22, %eax
     movb (%eax), %bl
     inc %eax
     movb (%eax), %cl

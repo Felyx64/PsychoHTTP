@@ -8,7 +8,7 @@
   TempResponseStylesObjLen = . - TempResponseStylesObj - 1
 
   TempResponsePostObj:
-    .asciz "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n<h1>Post Request!</h1>"
+    .asciz "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n<h1>DB_END_REACHED</h1>"
   TempResponsePostObjLen = . - TempResponsePostObj - 1
 
   TempResponseUploadObj:
@@ -85,7 +85,7 @@
 
     # clear the response object
     leal SCOM_Response_Creation_Table, %eax
-    call Clear_SCOM_8192
+    call Clear_SCOM_12288
 
     popl %ebx
 
@@ -104,7 +104,7 @@
 
     # clear the response object
     leal SCOM_Response_Creation_Table, %eax
-    call Clear_SCOM_8192
+    call Clear_SCOM_12288
 
     popl %ebx
 

@@ -52,13 +52,6 @@
     leal SCOM_Response_Creation_Table, %eax     # link start of res to %eax
     call Strlen                                 # get total length of response
 
-    pushl %eax
-    pushl %ebx
-    movl %ebx, %eax
-    call nstandard_console_write
-    popl %ebx
-    popl %eax
-
     movl %eax, %edx                             # move the response length into %edx
     movl %ebx, %ecx                             # move response message to %ecx
     popl %edi                                   # move server config into edi param
@@ -71,7 +64,7 @@
 
     # clear the response object
     leal SCOM_Response_Creation_Table, %eax
-    call Clear_SCOM_8192
+    call Clear_SCOM_12288
 
     popl %ebx
 
