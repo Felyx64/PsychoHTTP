@@ -25,7 +25,7 @@
   # RETURNS (%EAX): CHAR* TO THE TITLE WE GOT
   # RETURNS (%EBX): CHAR* TO THE DESCRIPTION WE GOT
   Extract_From_Post_Json:
-    addl $11, %eax                                    # add 1 to the %eax ptr so we reach the first variable
+    addl $10, %eax                                    # add 1 to the %eax ptr so we reach the first variable
     leal SCOM_extracted_json_title_data, %ecx         # link the title to the %ecx
     xorl %edx, %edx                                   # clear out edx
     xorl %edi, %edi                                   # empty out the edi
@@ -46,7 +46,7 @@
     dec %ecx                                          # decrement the dest ptr
     movb $0, (%ecx)                                   # add null terminator to dest so string is ended
     leal SCOM_extracted_json_description_data, %ecx   # assign description dest memory-ptr to %ecx
-    addl $14, %eax                                    # jump to start of description json starter
+    addl $13, %eax                                    # jump to start of description json starter
     xorl %edi, %edi                                   # reset the %edi bool
     xorl %edx, %edx                                   # reset the %edx delimiter
     .extract_json_desc:                               # start of extract description loop

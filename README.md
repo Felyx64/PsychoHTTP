@@ -1,5 +1,4 @@
 # Todo
-- Add Frontend
 - Make server work with daylight time savings
 - Finsish the DB logger
 
