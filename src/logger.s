@@ -322,7 +322,9 @@
       jmp .not_found_end_of_ua
       .end_of_ua_getter_loop:
 
-      # and terminate the string we made
+      # and terminate and endl the string we made
+      movb $10, (%edi)
+      inc %edi
       movb $0x0, (%edi)
       leal StringLogMemory, %eax
       call nstandard_console_write            # log the request log to the console
@@ -339,18 +341,29 @@
 
     log_database:
       # log format `Database: ACTION - - AMOUNT bytes \n`
-      #? MAY REPLACE WITH pushw operation
-      pushw $'\0'
-      pushw $'D'
-      pushw $'a'
-      pushw $'t'
-      pushw $'a'
-      pushw $'b'
-      pushw $'a'
-      pushw $'s'
-      pushw $'e'
-      pushw $':'
-      pushw $' '
+      leal StringLogMemory, %edi
+
+      # Write to logstack '\nDatabase: '
+      movb $'D', (%edi)
+      inc %edi
+      movb $'a', (%edi)
+      inc %edi
+      movb $'t', (%edi)
+      inc %edi
+      movb $'a', (%edi)
+      inc %edi
+      movb $'b', (%edi)
+      inc %edi
+      movb $'a', (%edi)
+      inc %edi
+      movb $'s', (%edi)
+      inc %edi
+      movb $'e', (%edi)
+      inc %edi
+      movb $':', (%edi)
+      inc %edi
+      movb $' ', (%edi)
+      inc %edi
 
       jmp *database_action_log_table(,%ebx,4)
 
@@ -360,43 +373,140 @@
         .long read_databaselog        # (2) log: database is reading
 
       invallid_databaselog:
-        # log message that database log is invallid
-        pushw $'I'
-        pushw $'N'
-        pushw $'V'
-        pushw $'A'
-        pushw $'L'
-        pushw $'\n'
+        # Write to logstack 'INVAL\n'
+        movb $'I', (%edi)
+        inc %edi
+        movb $'N', (%edi)
+        inc %edi
+        movb $'V', (%edi)
+        inc %edi
+        movb $'A', (%edi)
+        inc %edi
+        movb $'L', (%edi)
+        inc %edi
+        movb $'\n', (%edi)
+        inc %edi
 
         call nstandard_console_write
         call Write_File_Log
         jmp .logged_svr_msg
       write_databaselog:
-        # log if we are writing
-        pushw $'W'
-        pushw $'R'
-        pushw $'I'
-        pushw $'T'
-        pushw $'E'
-        pushw $' '
+        # Write to logstack 'WRITE - - '
+        movb $'W', (%edi)
+        inc %edi
+        movb $'R', (%edi)
+        inc %edi
+        movb $'I', (%edi)
+        inc %edi
+        movb $'T', (%edi)
+        inc %edi
+        movb $'E', (%edi)
+        inc %edi
+        movb $' ', (%edi)
+        inc %edi
+        movb $'-', (%edi)
+        inc %edi
+        movb $' ', (%edi)
+        inc %edi
+        movb $'-', (%edi)
+        inc %edi
+        movb $' ', (%edi)
+        inc %edi
 
-        #? DO LATER GRAB FROM SCOM MEMORY
+        # write how many bytes where written
+        leal Database_Write_Data, %eax
+        call Strlen
+        pushl %edi
+        leal SCOM_IntStr_Convert_Results, %edi
+        call IntToString
+        popl %esi
+        call String_Plot
+        movl %eax, %edi
 
+        # Write to logstack: bytes \n
+        movb $' ', (%edi)
+        inc %edi
+        movb $'b', (%edi)
+        inc %edi
+        movb $'y', (%edi)
+        inc %edi
+        movb $'t', (%edi)
+        inc %edi
+        movb $'e', (%edi)
+        inc %edi
+        movb $'s', (%edi)
+        inc %edi
+        movb $' ', (%edi)
+        inc %edi
+        movb $10, (%edi)
+        inc %edi
+        movb $0, (%edi)
+        inc %edi
+
+        leal StringLogMemory, %eax
         call nstandard_console_write
+        leal StringLogMemory, %eax
         call Write_File_Log
+        leal StringLogMemory, %eax
+        call Clear_SCOM
         jmp .logged_svr_msg
       read_databaselog:
         # log if we are reading
-        pushw $'R'
-        pushw $'E'
-        pushw $'A'
-        pushw $'D'
-        pushw $' '
+        movb $'R', (%edi)
+        inc %edi
+        movb $'E', (%edi)
+        inc %edi
+        movb $'A', (%edi)
+        inc %edi
+        movb $'D', (%edi)
+        inc %edi
+        movb $' ', (%edi)
+        inc %edi
+        movb $'-', (%edi)
+        inc %edi
+        movb $' ', (%edi)
+        inc %edi
+        movb $'-', (%edi)
+        inc %edi
+        movb $' ', (%edi)
+        inc %edi
 
-        #? DO LATER GRAB FROM SCOM MEMORY
+        # get the length of the get data
+        leal Database_Read_Result_Data, %eax
+        call Strlen
+        pushl %edi
+        leal SCOM_IntStr_Convert_Results, %edi
+        call IntToString
+        popl %esi
+        call String_Plot
+        movl %eax, %edi
 
+        # Write to logstack: bytes \n
+        movb $' ', (%edi)
+        inc %edi
+        movb $'b', (%edi)
+        inc %edi
+        movb $'y', (%edi)
+        inc %edi
+        movb $'t', (%edi)
+        inc %edi
+        movb $'e', (%edi)
+        inc %edi
+        movb $'s', (%edi)
+        inc %edi
+        movb $' ', (%edi)
+        inc %edi
+        movb $10, (%edi)
+        inc %edi
+        movb $0, (%edi)
+        inc %edi
+
+        leal StringLogMemory, %eax
         call nstandard_console_write
+        leal StringLogMemory, %eax
         call Write_File_Log
+        leal StringLogMemory, %eax
+        call Clear_SCOM
         jmp .logged_svr_msg
 
       jmp .logging_done

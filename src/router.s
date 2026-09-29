@@ -71,6 +71,11 @@
     cmpl $0, %eax
     je .no_db_items
 
+    # Log the db_read notif to the console and logfile
+    movl $2, %eax
+    movl $2, %ebx
+    call Log_Message
+
     call Handle_GetPost_Route_Request                 # handle the non-empty db and make the response here
 
     movl %eax, %edx                                   # move response message to %ecx

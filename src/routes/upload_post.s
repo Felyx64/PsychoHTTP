@@ -38,6 +38,14 @@
     popl %ebx
 
     call Create_Database_Index                  # convert the content to a db index
+
+    # log the db write message
+    pushl %eax                                  # backup the db index pointer
+    movl $2, %eax
+    movl $1, %ebx
+    call Log_Message
+    popl %eax                                   # get back the db index pointer
+
     call Strlen                                 # get the length of the index needed for writing
     xchgl %eax, %ebx                            # swap the 2 registers into the right place
     call QueryUPLOAD_PostToDB                   # Query the post of the database
