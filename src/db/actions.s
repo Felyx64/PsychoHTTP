@@ -1,3 +1,5 @@
+  # EXAMPLE DB INDEX: B|Post Title|31|Welcome the this fun post. This post is a example \n
+
 .section .bss
   Database_Write_Data:
     .space 326
@@ -9,9 +11,6 @@
     .space 44  # 44 = 4 * 10 + 4
 
 .section .data
-  title_of_post_item:   #? TMP
-    .asciz "post_1"
-
   postjson_title_text:
     .asciz "\"title\": "
 
@@ -100,7 +99,7 @@
     subl $2, %ebx                     # subl both so the parsing can start
     subl $2, %eax                     # subl both so the parsing can start
 
-    # GET ALL INDEXES OF THE PAGE
+    # get all indexes of the page
     leal GetIndex_Map, %edi           # create db page map here
     xorl %ecx, %ecx                   # clear out %ecx as we track the limit of the db page map
     .map_page_indexes:                # start of get db index loop
@@ -204,6 +203,3 @@
     .no_page_found:                        # we jump to this label if we did not find valid db result
     xorl %eax, %eax                        # clear out $eax as this means we did not get db result
     ret                                    # return to caller
-
-  # \x1E is deleted value
-  # EXAMPLE: B|Post Title|31|Welcome the this fun post. This post is a example \n

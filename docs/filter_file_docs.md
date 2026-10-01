@@ -7,7 +7,7 @@ There are no labels specifying which is an ip or user-agent since both are struc
 - User Agents
 - IPs
 
-### The folder should be exactly like this
+### Example of what the filter.txt could look like
 ```
 known-annoying-web-bot
 another-annoying-scraper

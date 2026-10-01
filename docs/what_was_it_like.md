@@ -1,0 +1,7 @@
+# Making this felt like hell. But it was absolutely worth it!
+During the first month, this was originally just a small project trying to casually play around with the linux kernel using syscalls. Eventually i got bored and had the insane idea of making my own server with it. I eventually decided to dedicate most of summer 2026 to making this. With it being finished today.
+The process was painful though and i had to invent my own ways to write assemnbly. Like nearly always using $EAX and $EBX as the first and second param of a procedure. Or it being better to write a complex instruction in Python first and the re-write it in Assemby.
+
+### What can you learn from writing something like this?
+Well quite allot actually. More than i even thought. You learn your own ways how to standardize your own code. You also definatly learn how why we dont write Assembly so often anymore LOL. But also lots of things about languages like C or even Java. Like its nice to now have a extremly strong understanding how what a pointer fully is. And you'll even learn why we something do complex design patterns like classes somehow in this. Its also nice to know how computers truly work quite well under the hood. Which is also smth you'd learn by writing this. You can also learn to be more diceplined at writing code and even alternative more primative ways to debug. Or less primative ways like GDB.
+Thats prolly the most important things you can learn from doing smth like this at least.

@@ -16,6 +16,8 @@
     .had_db_connection_error:     # label if connecting the db failed
     ret
 
+  # DESCRIPTION: DISCONNECTS THE DB
+  # OVERWRITES: EAX, EBX
   DisconnectDB:
     leal db_connection_id, %ebx   # link the fd storage in RAM to %ebx
     movl (%ebx), %eax             # get the fd back from the RAM

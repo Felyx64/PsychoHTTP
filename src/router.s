@@ -1,27 +1,11 @@
 .section .data
-  TempResponseRootObj:
-    .asciz "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n<h1>Root Request!</h1>"
-  TempResponseRootObjLen = . - TempResponseRootObj - 1
-
-  TempResponseStylesObj:
-    .asciz "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n<h1>Styles Request!</h1>"
-  TempResponseStylesObjLen = . - TempResponseStylesObj - 1
-
-  TempResponsePostObj:
+  EmptyDBResponsePostObj:
     .asciz "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n<h1>DB_END_REACHED</h1>"
-  TempResponsePostObjLen = . - TempResponsePostObj - 1
+  EmptyDBResponsePostObjLen = . - EmptyDBResponsePostObj - 1
 
-  TempResponseUploadObj:
-    .asciz "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n<h1>Upload Request!</h1>"
-  TempResponseUploadObjLen = . - TempResponseUploadObj - 1
-
-  TempResponseDisallowedObj:
+  ResponseDisallowedObj:
     .asciz "HTTP/1.1 403 OK\r\nContent-Type: text/html\r\n\r\n<h1>You are forbidded for entering this website!</h1>"
-  TempResponseDisallowedObjLen = . - TempResponseDisallowedObj - 1
-
-  TempResponseErrorObj:
-    .asciz "HTTP/1.1 500 OK\r\nContent-Type: text/html\r\n\r\n<h1>An error occured!</h1>"
-  TempResponseErrorObjLen = . - TempResponseErrorObj - 1
+  ResponseDisallowedObjLen = . - ResponseDisallowedObj - 1
 
 .section .bss
   RequestTimeSetterMemory:
@@ -30,15 +14,6 @@
 .section .data
   Response_Line_Starter_And_Terminator:
     .asciz "\r\n"
-
-  Disallowed_Route_Response:
-    .ascii "HTTP/1.1 403 FORBIDDEN\r\n"
-    .ascii "Content-Type: text/html\r\n"
-    .ascii "Server: SpookyFunnyAssemblyServer :3\r\n"
-    .ascii "Allow: GET\r\n"
-    .ascii "Connection: close\r\n"
-    .ascii "Transfer-Encoding: chunked\r\n"
-    .asciz "Date: "
 
 .section .text
   # PARAM ($EAX) THE SERVER ROUTE CODE
@@ -101,8 +76,8 @@
     popl %edi                                         # move server config into edi param
     movl $369, %eax                                   # move syscall code (sendto) into %eax
     movl $16, %ebp                                    # move the server config into last param
-    movl $TempResponsePostObj, %ecx                   # move response message to %ecx
-    movl $TempResponsePostObjLen, %edx                # move the response length into %edx
+    movl $EmptyDBResponsePostObj, %ecx                   # move response message to %ecx
+    movl $EmptyDBResponsePostObjLen, %edx                # move the response length into %edx
     int $0x80                                         # call syscall 369 (sendto)
 
     pushl %ebx
@@ -122,17 +97,10 @@
     movl %ecx, %ebx                             # move server-fd into the 2nd param
     movl $369, %eax                             # move syscall code (sendto) into %eax
     movl $16, %ebp                              # move the server config into last param
-    movl $TempResponseDisallowedObj, %ecx       # move response message to %ecx
-    movl $TempResponseDisallowedObjLen, %edx    # move the response length into %edx
+    movl $ResponseDisallowedObj, %ecx       # move response message to %ecx
+    movl $ResponseDisallowedObjLen, %edx    # move the response length into %edx
     int $0x80                                   # call syscall 369 (sendto)
 
     .end_sendout_res:
 
     ret
-
-# ADD MULTITHREAD VIA THIS
-.ifdef __RELEASE__MODE__
-
-.else
-
-.endif

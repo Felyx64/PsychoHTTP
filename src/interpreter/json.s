@@ -88,8 +88,6 @@
     addl %ecx, %eax
     ret
 
-  # WRITE FUNCTIONS FROM HERE
-
   # plot ({\n)
   # PARAM (%EAX) THE JSON WE'RE PLOTTING THE START ON
   Plot_Basic_Json_Object_Start:
@@ -281,4 +279,3 @@
 
   db_index_content_characters:
     .asciz "Content"
-  # db item titles

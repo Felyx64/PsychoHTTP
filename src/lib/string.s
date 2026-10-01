@@ -16,34 +16,6 @@
     movb $0, (%ebx, %ecx)         # add '\0' null terminator to the dest-2
     ret
 
-  #? UNTESTED
-  # concats string dest-1 to dest-2 with a max_val as 3rd param
-  # Param: EAX, dest-1
-  # Param: EBX, dest-2
-  # Overwrites: ECX, EDX
-  # Returns EBX, aka dest-2
-  String_Concat:
-    movl $0, %ecx                 # initiate %ecx which is index of dest-2
-    .get_start_second_param:      # start loop to search for end of dest-2
-    cmpb $0, (%ebx, %ecx)         # check if we hit end of dest-2
-    je .done_getting_start        # jump to end of loop if we hit end of dest-2
-    inc %ecx                      # increment index of dest-2 if we did not hit end of dest-2
-    jmp .get_start_second_param   # jump to begin of loop to continue loop
-    .done_getting_start:          # label for end of get end of dest-2 loop here
-
-    movl $0, %edx                 # initiate %edx which is index of dest-1
-    .concat_desta_to_destb:       # start of concat loop
-    cmpb $0, (%eax, %edx)         # check if we hit null terminator on dest-1 to see if concat loop is done
-    je .done_concatinating        # jump to end of loop if done with concatination
-    movb (%eax, %edx), %dl        # move char from dest-1 to %dl
-    movb %dl, (%ebx, %ecx)        # move char from %dx to dest-2
-    inc %edx                      # increment index of dest-2
-    inc %ecx                      # increment index of dest-1
-    jmp .concat_desta_to_destb    # jump back to begin of concatination loop
-    .done_concatinating:          # end of concatination loop
-    movb $0, (%ebx, %edx)         # add '\0' null terminator to the dest-2
-    ret
-
   # compare 2 strings
   # compares to strings byte by byte
   # Param: EAX, dest-1
@@ -116,7 +88,6 @@
     movl $0, %eax                 # move 0 False into %esi
     ret                           # return
 
-  #? REDO AND BUG FIX ODD NUMBERS LATER
   # PARAM (%EAX) the int that needs to be converted to string
   # PARAM (%EDI) pointer to the first character of the string we need to put the number into
   # DESCRIPTION: turn int to string

@@ -14,7 +14,7 @@
     .space 1024
 
   SCOM_IntStr_Convert_Results:
-    .space 512
+    .space 10
 
   SCOM_Response_Creation_Table:
     .space 12288

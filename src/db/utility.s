@@ -41,12 +41,6 @@
     movl %ecx, %eax                   # reset the ptr b4 going back
     ret                               # return
 
-  Determine_Writer_Size:
-    ret
-
-  Parse_WriterType_Id:
-    ret
-
   # PARAM (%EAX): CHAR* TO THE TITLE STRING
   # PARAM (%EBX): CHAR* TO THE DESC STRING
   # DESCRIPTION: CREATES A FORMATTED DATABASE INDEX READY TO BE INSERTED
@@ -80,6 +74,3 @@
     movb $0, (%eax)                   # put end of file onto the string ptr
     leal Database_Write_Data, %eax    # reset the string ptr before returning
     ret                               # return
-
-  Parse_Database_Index:
-    ret

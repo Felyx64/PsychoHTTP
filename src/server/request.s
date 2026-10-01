@@ -1,5 +1,3 @@
-.global Handle_Request
-
 .section .text
   Handle_Request:
     xorl %ecx, %ecx                         # leave server config params empty

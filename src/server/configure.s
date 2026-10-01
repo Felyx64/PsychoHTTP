@@ -1,5 +1,5 @@
 .section .text
-  # CONFIGURE_SERVER: CONFIGURES THE SERVER BEFORE ITS BEEN ASSIGNED ITS ADDRESS VIA SYSCALL (setsockopt)
+  # DESCRIPTION: CONFIGURES THE SERVER BEFORE ITS BEEN ASSIGNED ITS ADDRESS VIA SYSCALL (setsockopt)
   # OVERWRITES: EAX, ECX, EDX, ESI, EDI
   # PARAMETERS: (EBX): NEEDS TO CONTAIN SERVER FD
   # RETURNS: (EAX) EXIT CODE OF THE OPERATION
@@ -23,10 +23,10 @@ configure_server:
     .configuration_succesfull:
     ret
 
-    # INITIALIALIZE_SERVER: SET THE SERVERS REQUIRED ADRESS INFO VIA SYSCALL (bind)
-    # OVERWRITES: EAX, ECX, EDX
-    # PARAMETERS: (EBX): NEEDS TO CONTAIN SERVER FD
-    # RETURNS: (EAX) EXIT CODE OF THE OPERATION
+  # DESCRIPTION: SET THE SERVERS REQUIRED ADRESS INFO VIA SYSCALL (bind)
+  # OVERWRITES: EAX, ECX, EDX
+  # PARAMETERS: (EBX): NEEDS TO CONTAIN SERVER FD
+  # RETURNS: (EAX) EXIT CODE OF THE OPERATION
   initialialize_server:
     movl $361, %eax                         # move 361 which is syscall id of (bind) into EAX for for the syscall
     movl $16, %edx                          # pass in the size of the struct into the last parameter which is %EDX

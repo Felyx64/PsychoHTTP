@@ -13,7 +13,6 @@
   # returns first char of next item on the filter
   # Returns: (EAX) Pointer to first char of what item we are filtering
   Get_Filtered_String:
-    # might need to revert to $ on Filter_Ptr
     movl Filter_Ptr, %eax             # move current pointer to %eax
     ret                               # go back
 

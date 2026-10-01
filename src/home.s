@@ -26,8 +26,6 @@
     leal SCOM_File_Read_Results, %eax         # link the scom results again to %eax
     call Clear_SCOM                           # clear the scom
 
-    .dont_hang_here:
-
     call Initialize_Filter_Language           # Initialze the server filter
 
     # create the SA_RESTART handler struct required for the coming syscall. struct is C struct "struct sigaction"
@@ -168,8 +166,8 @@
     leal 4(%esp), %edi                        # move server config into edi param
     movl $369, %eax                           # move syscall code (sendto) into %eax
     movl $16, %ebp                            # move the server config size into last param
-    movl $TempResponseErrorObj, %ecx          # move response message to %ecx
-    movl $TempResponseErrorObjLen, %edx       # move the response length into %edx
+    movl $ResponseDisallowedObj, %ecx          # move response message to %ecx
+    movl $ResponseDisallowedObjLen, %edx       # move the response length into %edx
     int $0x80                                 # call syscall 369 (sendto)
     jmp .close_req                            # jump over switch to close the request
 
@@ -202,8 +200,6 @@
     # $ebx is already set
     int $0x80                                 # call syscall (close)
 
-    # CLEAR REQUEST BUFFER HERE
-
     jmp .server_loop                          # jump back the the start of the loop if there we have not gotten a signal yet
     .start_shutdown_process:                  # label we need to jump to if we need to shutdown the server
 
@@ -211,46 +207,45 @@
     call program_exit                         # exit the server
 
 # server router goes here
-.include "/home/f65/Documents/proj/PsychoHTTP/src/routes/root.s"
-.include "/home/f65/Documents/proj/PsychoHTTP/src/routes/styles.s"
-.include "/home/f65/Documents/proj/PsychoHTTP/src/routes/upload_post.s"
-.include "/home/f65/Documents/proj/PsychoHTTP/src/routes/get_post.s"
+.include "./../src/routes/root.s"
+.include "./../src/routes/styles.s"
+.include "./../src/routes/upload_post.s"
+.include "./../src/routes/get_post.s"
 
 # importing some response assisting code here
-.include "/home/f65/Documents/proj/PsychoHTTP/src/default_router_builder.s"
+.include "./../src/default_router_builder.s"
 
 # server logger goes here
-.include "/home/f65/Documents/proj/PsychoHTTP/src/logger.s"
+.include "./../src/logger.s"
 
 # database utils go here
-.include "/home/f65/Documents/proj/PsychoHTTP/src/db/actions.s"
-.include "/home/f65/Documents/proj/PsychoHTTP/src/db/connection.s"
-.include "/home/f65/Documents/proj/PsychoHTTP/src/db/utility.s"
+.include "./../src/db/actions.s"
+.include "./../src/db/connection.s"
+.include "./../src/db/utility.s"
 
 # middleware goes here
-.include "/home/f65/Documents/proj/PsychoHTTP/src/middleware/filter_request.s"
+.include "./../src/middleware/filter_request.s"
 
 # router logic imported here
-.include "/home/f65/Documents/proj/PsychoHTTP/src/routecode_getter.s"
-.include "/home/f65/Documents/proj/PsychoHTTP/src/router.s"
+.include "./../src/routecode_getter.s"
+.include "./../src/router.s"
 
 # server imported here
-.include "/home/f65/Documents/proj/PsychoHTTP/src/server/request.s"
-.include "/home/f65/Documents/proj/PsychoHTTP/src/server/response.s"
-.include "/home/f65/Documents/proj/PsychoHTTP/src/server/create.s"
-.include "/home/f65/Documents/proj/PsychoHTTP/src/server/configure.s"
-.include "/home/f65/Documents/proj/PsychoHTTP/src/server/listen.s"
+.include "./../src/server/request.s"
+.include "./../src/server/create.s"
+.include "./../src/server/configure.s"
+.include "./../src/server/listen.s"
 
 # interpreters go here
-.include "/home/f65/Documents/proj/PsychoHTTP/src/interpreter/filter_language.s"
-.include "/home/f65/Documents/proj/PsychoHTTP/src/interpreter/json.s"
+.include "./../src/interpreter/filter_language.s"
+.include "./../src/interpreter/json.s"
 
 # lib goes in near bottom
-.include "/home/f65/Documents/proj/PsychoHTTP/src/lib/iostream.s"
-.include "/home/f65/Documents/proj/PsychoHTTP/src/lib/string.s"
-.include "/home/f65/Documents/proj/PsychoHTTP/src/lib/fsio.s"
-.include "/home/f65/Documents/proj/PsychoHTTP/src/lib/exit.s"
-.include "/home/f65/Documents/proj/PsychoHTTP/src/lib/time.s"
+.include "./../src/lib/iostream.s"
+.include "./../src/lib/string.s"
+.include "./../src/lib/fsio.s"
+.include "./../src/lib/exit.s"
+.include "./../src/lib/time.s"
 
 # scom goes in bottom as its globally accessed
-.include "/home/f65/Documents/proj/PsychoHTTP/src/scom.s"
+.include "./../src/scom.s"

@@ -66,6 +66,7 @@
     movl %ebx, %eax                      # move the code into the %eax
     ret
 
+# Routes Mapped out:
 # GET /
 # normal get the home page
 # GET /styles
@@ -75,5 +76,3 @@
 # T the range of which posts
 # POST /upload_post
 # Upload a post to the backend
-
-# returns
